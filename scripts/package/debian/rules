@@ -41,6 +41,10 @@ package = $($(@:binary-%=%-package))
 # which package is being processed in the build log.
 DH_OPTIONS = -p$(package)
 
+# default zstd compression of ubuntu is not supported in other debian distributions.
+# xz compression works for all debian including ubuntu.
+KDEB_COMPRESS="xz"
+
 define binary
 	$(Q)dh_testdir $(DH_OPTIONS)
 	$(Q)dh_testroot $(DH_OPTIONS)
