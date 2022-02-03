@@ -26,8 +26,11 @@ if_enabled_echo() {
 
 create_package() {
 	local pname="$1" pdir="$2"
-	local dpkg_deb_opts
+	local dpkg_deb_opts deb_compress
 
+	# default zstd compression of ubuntu is not supported in other debian distributions.
+	# xz compression works for all debian including ubuntu.
+	deb_compress="xz"
 	mkdir -m 755 -p "$pdir/DEBIAN"
 	mkdir -p "$pdir/usr/share/doc/$pname"
 	cp debian/copyright "$pdir/usr/share/doc/$pname/"
@@ -48,7 +51,7 @@ create_package() {
 
 	# Create the package
 	dpkg-gencontrol -p$pname -P"$pdir"
-	dpkg-deb $dpkg_deb_opts ${KDEB_COMPRESS:+-Z$KDEB_COMPRESS} --build "$pdir" ..
+	dpkg-deb $dpkg_deb_opts -Z$deb_compress --build "$pdir" ..
 }
 
 install_linux_image () {
