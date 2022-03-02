@@ -9,4 +9,6 @@ obj-$(CONFIG_RTLWIFI)		+= rtlwifi/
 obj-$(CONFIG_RTL8XXXU)		+= rtl8xxxu/
 obj-$(CONFIG_RTW88)		+= rtw88/
 obj-$(CONFIG_RTW89)		+= rtw89/
+obj-$(CONFIG_RTL8192EU_OEM)	+= rtl8192eu/
+obj-$(CONFIG_RTL8822BU_OEM)	+= rtl88x2bu/
 
