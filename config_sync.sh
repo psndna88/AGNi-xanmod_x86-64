@@ -6,6 +6,7 @@ echo " 1: generic       	x86-64 build"
 echo " 2: AMD_zen2      	x86-64 build"
 echo " 3: Intel_skylake 	x86-64 build"
 echo " 4: Intel_sandybridge 	x86-64 build"
+echo " 5: Intel_westmere 	x86-64 build"
 echo " "
 echo " 0:  X  Exit Compilation  X"
 echo " "
@@ -23,6 +24,9 @@ elif [ $choice -eq 3 ]; then
 elif [ $choice -eq 4 ]; then
 	CONFIG="agni_sandybridge_config"
 	TYPE="agni intel-sandybridge"
+elif [ $choice -eq 5 ]; then
+	CONFIG="agni_westmere_config"
+	TYPE="agni intel-westmere"
 elif [ $choice -eq 0 ]; then
 	exit
 else
