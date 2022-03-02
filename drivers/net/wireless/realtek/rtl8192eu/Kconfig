@@ -1,0 +1,3 @@
+config RTL8192EU_OEM
+	tristate "Realtek 8192E USB WiFi by Realtek"
+	depends on USB
