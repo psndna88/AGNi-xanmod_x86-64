@@ -96,7 +96,7 @@ config 8139_OLD_RX_RESET
 	  old RX-reset behavior.  If unsure, say N.
 
 config R8169
-	tristate "Realtek 8169/8168/8101/8125 ethernet support"
+	tristate "Realtek 8169/8168/8101/8125 ethernet support by linux"
 	depends on PCI
 	select FW_LOADER
 	select CRC32
@@ -112,5 +112,62 @@ config R8169
 
 	  To compile this driver as a module, choose M here: the module
 	  will be called r8169.  This is recommended.
+
+config R8101_OEM
+	tristate "RealTek RTL8101E/RTL8102E(L)/RTL8103E(L) ethernet support by realtek"
+	depends on PCI && !R8169
+	select FW_LOADER
+	select CRC32
+	select PHYLIB
+	select REALTEK_PHY
+	help
+	  Say Y here if you have a Realtek Ethernet adapter RealTek RTL8101E,
+	  RTL8102E(L), RTL8103E(L), the Fast Ethernet controller with PCI-Express interface
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called r8101.
+
+config R8125_OEM
+	tristate "RealTek RTL8125 2.5Gigabit Ethernet support by realtek"
+	depends on PCI && !R8169
+	select FW_LOADER
+	select CRC32
+	select PHYLIB
+	select REALTEK_PHY
+	help
+	  Say Y here if you have a Realtek Ethernet adapter RealTek RTL8125
+	  2.5Gigabit Ethernet controllers with PCI-Express interface
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called r8125.
+
+config R8168_OEM
+	tristate "RealTek RTL8168(B/C/CP/D/DP/E)/8111(B/C/CP/D/DP/E) support by realtek"
+	depends on PCI && !R8169
+	select FW_LOADER
+	select CRC32
+	select PHYLIB
+	select REALTEK_PHY
+	help
+	  Say Y here if you have a Realtek Ethernet adapter RealTek RTL8168B/8111B,
+	   RTL8168C/8111C, RTL8168CP/8111CP, RTL8168D/8111D, RTL8168DP/8111DP
+	   and RTL8168E/8111E ethernet controller with PCI-Express interface
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called r8168.
+
+config R8169_OEM
+	tristate "RealTek RTL8169(S/SB)/8110(S/SB/SC) support by realtek"
+	depends on PCI && !R8169
+	select FW_LOADER
+	select CRC32
+	select PHYLIB
+	select REALTEK_PHY
+	help
+	  Say Y here if you have a Realtek Ethernet adapter RealTek RTL8169S/8110S, 
+	  RTL8169SB/8110SB and RTL8110SC ethernet controller with PCI-Express interface
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called r8169.
 
 endif # NET_VENDOR_REALTEK
