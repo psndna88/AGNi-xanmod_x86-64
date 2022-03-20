@@ -7,6 +7,8 @@ if [ "$UID" -eq 0 ]; then
 		echo "Installing AGNi-xanmod kernel...."
 		dpkg -i $EXTRACTDIR/*.deb
 		./agni_firmware_extract.sh
+		cp -f $EXTRACTDIR/eoip /usr/bin/
+		chmod 0777 /usr/bin/eoip
 	fi
 else
 	echo "Please attempt to install with superuser/admin rights (sudo/su)"
