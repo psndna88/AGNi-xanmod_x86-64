@@ -46,6 +46,7 @@ if ([ -f $KERNELDIR/../linux-headers*.deb ] && [ -f $KERNELDIR/../linux-image*.d
 	cp -f scripts/package/install_agni.sh $KERNELDIR/DEB_TEMP/
 	cp -f agni_firmware_extract.sh $KERNELDIR/DEB_TEMP/
 	cp -f scripts/package/firmware/ath10k/qca9377/firmware-5.bin.wlan $KERNELDIR/DEB_TEMP/
+	cp -f scripts/package/eoip_tool/eoip $KERNELDIR/DEB_TEMP/
 	chmod +x $KERNELDIR/DEB_TEMP/agni_firmware_extract.sh
 	chmod +x $KERNELDIR/DEB_TEMP/install_agni.sh
 	makeself --gzip --threads $BUILDJOBS --needroot --nomd5 --nocrc --quiet $KERNELDIR/DEB_TEMP/ AGNi-kernel-$AGNI_VERSION-debian-$AGNI_KERNEL_LINUX-$AGNI_BUILD_TYPE.run AGNi_kernel_x86-64 ./install_agni.sh
