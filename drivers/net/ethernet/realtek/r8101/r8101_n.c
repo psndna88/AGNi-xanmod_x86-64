@@ -1291,7 +1291,7 @@ static void rtl8101_proc_module_init(void)
 static int rtl8101_proc_open(struct inode *inode, struct file *file)
 {
         struct net_device *dev = proc_get_parent_data(inode);
-        int (*show)(struct seq_file *, void *) = PDE_DATA(inode);
+        int (*show)(struct seq_file *, void *) = pde_data(inode);
 
         return single_open(file, show, dev);
 }
@@ -10031,8 +10031,7 @@ rtl8101_get_mac_address(struct net_device *dev)
         rtl8101_rar_set(tp, mac_addr);
 
         for (i = 0; i < MAC_ADDR_LEN; i++) {
-                dev->dev_addr[i] = RTL_R8(tp, MAC0 + i);
-                tp->org_mac_addr[i] = dev->dev_addr[i]; /* keep the original MAC address */
+                tp->org_mac_addr[i] = RTL_R8(tp, MAC0 + i); /* keep the original MAC address */
         }
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,13)
         memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);
