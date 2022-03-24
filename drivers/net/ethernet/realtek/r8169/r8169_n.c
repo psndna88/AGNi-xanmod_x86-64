@@ -1989,8 +1989,7 @@ rtl8169_get_mac_address(struct net_device *dev)
 
         /* Get MAC address.  FIXME: read EEPROM */
         for (i = 0; i < MAC_ADDR_LEN; i++) {
-                dev->dev_addr[i] = RTL_R8(MAC0 + i);
-                tp->org_mac_addr[i] = dev->dev_addr[i]; /* keep the original MAC address */
+                tp->org_mac_addr[i] = RTL_R8(MAC0 + i); /* keep the original MAC address */
         }
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,13)
         memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);
