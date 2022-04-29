@@ -1,7 +1,6 @@
 #!/bin/bash
 export ARCH=x86
 export SUBARCH=x86
-export BUILDJOBS=8
 
 KERNELDIR=`readlink -f .`
 
@@ -31,7 +30,7 @@ echo ""
 . $KERNELDIR/cleanbuild.sh
 
 cp -f $KERNELDIR/CONFIGS/agni/$CONFIG $KERNELDIR/.config
-make -j$BUILDJOBS deb-pkg
+make -j`nproc --ignore=2` deb-pkg
 
 if [ $SYNC_CONFIG -eq 1 ]; then # SYNC CONFIG
 	cp -f $KERNELDIR/.config $KERNELDIR/CONFIGS/agni/$CONFIG
