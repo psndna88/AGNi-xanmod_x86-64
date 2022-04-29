@@ -5,9 +5,9 @@ export SUBARCH=x86
 KERNELDIR=`readlink -f .`
 
 DEVICE="x86"
-CONFIG="agni_skylake_config"
+CONFIG="agni_haswell_config"
 SYNC_CONFIG=1
-export AGNI_BUILD_TYPE="intel_skylake_x86-64"
+export AGNI_BUILD_TYPE="intel_haswell_x86-64"
 
 . $KERNELDIR/AGNi_version.sh
 
