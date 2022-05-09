@@ -118,6 +118,14 @@ config RTL8192CU
 
 	If you choose to build it as a module, it will be called rtl8192cu
 
+config RTL8188FU
+	tristate "Realtek 8188F 802.11n USB WiFi"
+	default m
+	depends on USB
+	select WIRELESS_EXT
+	help
+	  Help message of RTL8818FU
+
 config RTLWIFI
 	tristate
 	select FW_LOADER
