@@ -8,6 +8,7 @@ echo " 3: Intel_skylake 	x86-64 build"
 echo " 4: Intel_sandybridge 	x86-64 build"
 echo " 5: Intel_westmere 	x86-64 build"
 echo " 6: Intel_haswell 	x86-64 build"
+echo " 7: Intel_core2series 	x86-64 build"
 echo " "
 echo " 0:  X  Exit Compilation  X"
 echo " "
@@ -31,6 +32,9 @@ elif [ $choice -eq 5 ]; then
 elif [ $choice -eq 6 ]; then
 	CONFIG="agni_haswell_config"
 	TYPE="agni intel-haswell"
+elif [ $choice -eq 7 ]; then
+	CONFIG="agni_core2series_config"
+	TYPE="agni intel-core2series"
 elif [ $choice -eq 0 ]; then
 	exit
 else

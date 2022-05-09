@@ -17,3 +17,17 @@ if [ -f /lib/firmware/ath10k/QCA9377/hw1.0/firmware-5.bin ];then
 		echo " Qualcomm QCA9377 WiFi firmware is the recomended version.."
 	fi
 fi
+
+# Extract and force Realtek RTL8188FU USB WiFi firmware
+if [ ! -f /lib/firmware/rtlwifi/rtl8188fufw.bin ];then             
+	echo " Installing RTL8188FU firmware.."
+	if [ -f rtl8188fufw.bin.wlan ];then
+		cp -f rtl8188fufw.bin.wlan /lib/firmware/rtlwifi/rtl8188fufw.bin
+	else
+		cp -f scripts/package/firmware/rtl8188fu/rtl8188fufw.bin.wlan /lib/firmware/rtlwifi/rtl8188fufw.bin
+	fi
+	chmod 0777 /lib/firmware/rtlwifi/rtl8188fufw.bin
+else
+	echo " Realtek RTL8188FU USB WiFi firmware installed."
+fi
+

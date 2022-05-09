@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.17.5 Kernel Configuration
+# Linux/x86 5.17.6 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc (Ubuntu 11.2.0-7ubuntu2) 11.2.0"
 CONFIG_CC_IS_GCC=y
@@ -511,12 +511,12 @@ CONFIG_X86_SGX=y
 CONFIG_EFI=y
 CONFIG_EFI_STUB=y
 CONFIG_EFI_MIXED=y
-# CONFIG_HZ_100 is not set
+CONFIG_HZ_100=y
 # CONFIG_HZ_250 is not set
 # CONFIG_HZ_300 is not set
-CONFIG_HZ_500=y
+# CONFIG_HZ_500 is not set
 # CONFIG_HZ_1000 is not set
-CONFIG_HZ=500
+CONFIG_HZ=100
 CONFIG_SCHED_HRTICK=y
 CONFIG_KEXEC=y
 CONFIG_KEXEC_FILE=y
