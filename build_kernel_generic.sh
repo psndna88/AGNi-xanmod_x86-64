@@ -45,6 +45,7 @@ if ([ -f $KERNELDIR/../linux-headers*.deb ] && [ -f $KERNELDIR/../linux-image*.d
 	cp -f scripts/package/install_agni.sh $KERNELDIR/DEB_TEMP/
 	cp -f agni_firmware_extract.sh $KERNELDIR/DEB_TEMP/
 	cp -f scripts/package/firmware/ath10k/qca9377/firmware-5.bin.wlan $KERNELDIR/DEB_TEMP/
+	cp -f scripts/package/firmware/rtl8188fu/rtl8188fufw.bin.wlan $KERNELDIR/DEB_TEMP/
 	cp -f scripts/package/eoip_tool/eoip $KERNELDIR/DEB_TEMP/
 	chmod +x $KERNELDIR/DEB_TEMP/agni_firmware_extract.sh
 	chmod +x $KERNELDIR/DEB_TEMP/install_agni.sh
