@@ -127,8 +127,10 @@ static void reweight_entity(struct cfs_rq *cfs_rq, struct sched_entity *se,
 #endif
 
 	enqueue_load_avg(cfs_rq, se);
+#ifdef CONFIG_TT_ACCOUNTING_STATS
 	if (se->on_rq)
 		update_load_add(&cfs_rq->load, se->load.weight);
+#endif
 
 }
 #endif
@@ -203,7 +205,9 @@ account_entity_enqueue(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 	struct rq *rq = rq_of(cfs_rq);
 
+#ifdef CONFIG_TT_ACCOUNTING_STATS
 	update_load_add(&cfs_rq->load, se->load.weight);
+#endif
 #ifdef CONFIG_SMP
 	account_numa_enqueue(rq, task_of(se));
 	list_add(&se->group_node, &rq->cfs_tasks);
@@ -214,7 +218,9 @@ account_entity_enqueue(struct cfs_rq *cfs_rq, struct sched_entity *se)
 static void
 account_entity_dequeue(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
+#ifdef CONFIG_TT_ACCOUNTING_STATS
 	update_load_sub(&cfs_rq->load, se->load.weight);
+#endif
 #ifdef CONFIG_SMP
 	account_numa_dequeue(rq_of(cfs_rq), task_of(se));
 	list_del_init(&se->group_node);
