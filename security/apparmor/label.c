@@ -1753,10 +1753,12 @@ void aa_label_xaudit(struct audit_buffer *ab, struct aa_ns *ns,
 		str = (char *) label->hname;
 		len = strlen(str);
 	}
+#ifdef CONFIG_AUDIT
 	if (audit_string_contains_control(str, len))
 		audit_log_n_hex(ab, str, len);
 	else
 		audit_log_n_string(ab, str, len);
+#endif
 
 	kfree(name);
 }

@@ -3806,8 +3806,10 @@ out:
 
 static int aurule_avc_callback(u32 event)
 {
+#ifdef CONFIG_AUDIT
 	if (event == AVC_CALLBACK_RESET)
 		return audit_update_lsm_rules();
+#endif
 	return 0;
 }
 
