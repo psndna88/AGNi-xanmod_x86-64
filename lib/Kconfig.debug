@@ -577,7 +577,7 @@ config MAGIC_SYSRQ_SERIAL_SEQUENCE
 
 	  If unsure, leave an empty string and the option will not be enabled.
 
-config DEBUG_FS
+config DEBUG__FS
 	bool "Debug Filesystem"
 	help
 	  debugfs is a virtual file system that kernel developers use to put
@@ -591,7 +591,7 @@ config DEBUG_FS
 
 choice
 	prompt "Debugfs default access"
-	depends on DEBUG_FS
+	depends on DEBUG__FS
 	default DEBUG_FS_ALLOW_ALL
 	help
 	  This selects the default access restrictions for debugfs.
