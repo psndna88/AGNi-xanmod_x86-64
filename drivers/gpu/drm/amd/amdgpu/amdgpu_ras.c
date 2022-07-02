@@ -1445,7 +1445,7 @@ void amdgpu_ras_debugfs_create_all(struct amdgpu_device *adev)
 	 * it won't be called in resume path, no need to check
 	 * suspend and gpu reset status
 	 */
-	if (!IS_ENABLED(CONFIG_DEBUG_FS) || !con)
+	if (!IS_ENABLED(CONFIG_DEBUG__FS) || !con)
 		return;
 
 	dir = amdgpu_ras_debugfs_create_ctrl_node(adev);
@@ -1510,7 +1510,7 @@ static int amdgpu_ras_fs_fini(struct amdgpu_device *adev)
 	struct amdgpu_ras *con = amdgpu_ras_get_context(adev);
 	struct ras_manager *con_obj, *ip_obj, *tmp;
 
-	if (IS_ENABLED(CONFIG_DEBUG_FS)) {
+	if (IS_ENABLED(CONFIG_DEBUG__FS)) {
 		list_for_each_entry_safe(con_obj, tmp, &con->head, node) {
 			ip_obj = amdgpu_ras_find_obj(adev, &con_obj->head);
 			if (ip_obj)

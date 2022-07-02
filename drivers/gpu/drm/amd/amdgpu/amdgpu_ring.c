@@ -356,7 +356,7 @@ bool amdgpu_ring_soft_recovery(struct amdgpu_ring *ring, unsigned int vmid,
 /*
  * Debugfs info
  */
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 /* Layout of file is 12 bytes consisting of
  * - rptr
@@ -420,7 +420,7 @@ static const struct file_operations amdgpu_debugfs_ring_fops = {
 void amdgpu_debugfs_ring_init(struct amdgpu_device *adev,
 			      struct amdgpu_ring *ring)
 {
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 	struct drm_minor *minor = adev_to_drm(adev)->primary;
 	struct dentry *root = minor->debugfs_root;
 	char name[32];

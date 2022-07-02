@@ -1593,7 +1593,7 @@ void kfd_double_confirm_iommu_support(struct kfd_dev *gpu)
 	up_read(&topology_lock);
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 int kfd_debugfs_hqds_by_device(struct seq_file *m, void *data)
 {

@@ -1995,7 +1995,7 @@ int kfd_process_get_user_gpu_id(struct kfd_process *p, uint32_t actual_gpu_id)
 	return -EINVAL;
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 int kfd_debugfs_mqds_by_process(struct seq_file *m, void *data)
 {

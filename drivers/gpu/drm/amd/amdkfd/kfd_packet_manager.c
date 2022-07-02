@@ -407,7 +407,7 @@ void pm_release_ib(struct packet_manager *pm)
 	mutex_unlock(&pm->lock);
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 int pm_debugfs_runlist(struct seq_file *m, void *data)
 {

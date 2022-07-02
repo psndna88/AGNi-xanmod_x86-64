@@ -371,7 +371,7 @@ void ttm_tt_unpopulate(struct ttm_device *bdev, struct ttm_tt *ttm)
 	ttm->page_flags &= ~TTM_TT_FLAG_PRIV_POPULATED;
 }
 
-#ifdef CONFIG_DEBUG_FS
+#ifdef CONFIG_DEBUG__FS
 
 /* Test the shrinker functions and dump the result */
 static int ttm_tt_debugfs_shrink_show(struct seq_file *m, void *data)
@@ -393,7 +393,7 @@ DEFINE_SHOW_ATTRIBUTE(ttm_tt_debugfs_shrink);
  */
 void ttm_tt_mgr_init(unsigned long num_pages, unsigned long num_dma32_pages)
 {
-#ifdef CONFIG_DEBUG_FS
+#ifdef CONFIG_DEBUG__FS
 	debugfs_create_file("tt_shrink", 0400, ttm_debugfs_root, NULL,
 			    &ttm_tt_debugfs_shrink_fops);
 #endif

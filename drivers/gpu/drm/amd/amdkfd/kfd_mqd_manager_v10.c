@@ -386,7 +386,7 @@ static void restore_mqd_sdma(struct mqd_manager *mm, void **mqd,
 	qp->is_active = 0;
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 static int debugfs_show_mqd(struct seq_file *m, void *data)
 {
@@ -432,7 +432,7 @@ struct mqd_manager *mqd_manager_init_v10(enum KFD_MQD_TYPE type,
 		mqd->get_wave_state = get_wave_state;
 		mqd->checkpoint_mqd = checkpoint_mqd;
 		mqd->restore_mqd = restore_mqd;
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 		mqd->debugfs_show_mqd = debugfs_show_mqd;
 #endif
 		pr_debug("%s@%i\n", __func__, __LINE__);
@@ -447,7 +447,7 @@ struct mqd_manager *mqd_manager_init_v10(enum KFD_MQD_TYPE type,
 		mqd->destroy_mqd = kfd_destroy_mqd_cp;
 		mqd->is_occupied = kfd_is_occupied_cp;
 		mqd->mqd_size = sizeof(struct v10_compute_mqd);
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 		mqd->debugfs_show_mqd = debugfs_show_mqd;
 #endif
 		mqd->read_doorbell_id = read_doorbell_id;
@@ -462,7 +462,7 @@ struct mqd_manager *mqd_manager_init_v10(enum KFD_MQD_TYPE type,
 		mqd->destroy_mqd = kfd_destroy_mqd_cp;
 		mqd->is_occupied = kfd_is_occupied_cp;
 		mqd->mqd_size = sizeof(struct v10_compute_mqd);
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 		mqd->debugfs_show_mqd = debugfs_show_mqd;
 #endif
 		break;
@@ -478,7 +478,7 @@ struct mqd_manager *mqd_manager_init_v10(enum KFD_MQD_TYPE type,
 		mqd->checkpoint_mqd = checkpoint_mqd_sdma;
 		mqd->restore_mqd = restore_mqd_sdma;
 		mqd->mqd_size = sizeof(struct v10_sdma_mqd);
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 		mqd->debugfs_show_mqd = debugfs_show_mqd_sdma;
 #endif
 		pr_debug("%s@%i\n", __func__, __LINE__);

@@ -39,7 +39,7 @@
 
 #include "amdgpu_reset.h"
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 /**
  * amdgpu_debugfs_process_reg_op - Handle MMIO register reads/writes

@@ -1502,7 +1502,7 @@ uint32_t amdgpu_bo_get_preferred_domain(struct amdgpu_device *adev,
 	return domain;
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 #define amdgpu_bo_print_flag(m, bo, flag)		        \
 	do {							\
 		if (bo->flags & (AMDGPU_GEM_CREATE_ ## flag)) {	\

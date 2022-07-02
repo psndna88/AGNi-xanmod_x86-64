@@ -3448,7 +3448,7 @@ error_unref:
 	return false;
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 /**
  * amdgpu_debugfs_vm_bo_info  - print BO info for the VM
  *

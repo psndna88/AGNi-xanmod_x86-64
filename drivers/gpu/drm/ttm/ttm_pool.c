@@ -559,7 +559,7 @@ static unsigned long ttm_pool_shrinker_count(struct shrinker *shrink,
 	return num_pages ? num_pages : SHRINK_EMPTY;
 }
 
-#ifdef CONFIG_DEBUG_FS
+#ifdef CONFIG_DEBUG__FS
 /* Count the number of pages available in a pool_type */
 static unsigned int ttm_pool_type_count(struct ttm_pool_type *pt)
 {
@@ -712,7 +712,7 @@ int ttm_pool_mgr_init(unsigned long num_pages)
 				   ttm_uncached, i);
 	}
 
-#ifdef CONFIG_DEBUG_FS
+#ifdef CONFIG_DEBUG__FS
 	debugfs_create_file("page_pool", 0444, ttm_debugfs_root, NULL,
 			    &ttm_pool_debugfs_globals_fops);
 	debugfs_create_file("page_pool_shrink", 0400, ttm_debugfs_root, NULL,

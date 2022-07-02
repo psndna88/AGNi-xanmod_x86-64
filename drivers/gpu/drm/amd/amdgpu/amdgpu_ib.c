@@ -427,7 +427,7 @@ int amdgpu_ib_ring_tests(struct amdgpu_device *adev)
 /*
  * Debugfs info
  */
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 static int amdgpu_debugfs_sa_info_show(struct seq_file *m, void *unused)
 {
@@ -451,7 +451,7 @@ DEFINE_SHOW_ATTRIBUTE(amdgpu_debugfs_sa_info);
 
 void amdgpu_debugfs_sa_init(struct amdgpu_device *adev)
 {
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 	struct drm_minor *minor = adev_to_drm(adev)->primary;
 	struct dentry *root = minor->debugfs_root;
 

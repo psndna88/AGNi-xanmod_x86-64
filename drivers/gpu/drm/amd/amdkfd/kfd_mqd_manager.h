@@ -115,7 +115,7 @@ struct mqd_manager {
 				const void *ctl_stack_src,
 				const u32 ctl_stack_size);
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 	int	(*debugfs_show_mqd)(struct seq_file *m, void *data);
 #endif
 	uint32_t (*read_doorbell_id)(void *mqd);

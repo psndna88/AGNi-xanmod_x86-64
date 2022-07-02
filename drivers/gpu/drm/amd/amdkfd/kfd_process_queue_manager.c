@@ -868,7 +868,7 @@ int pqm_get_queue_checkpoint_info(struct process_queue_manager *pqm,
 	return 0;
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 int pqm_debugfs_mqds(struct seq_file *m, void *data)
 {

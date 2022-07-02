@@ -3395,7 +3395,7 @@ void amdgpu_pm_sysfs_fini(struct amdgpu_device *adev)
 /*
  * Debugfs info
  */
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 static void amdgpu_debugfs_prints_cpu_info(struct seq_file *m,
 					   struct amdgpu_device *adev) {
@@ -3599,7 +3599,7 @@ static const struct file_operations amdgpu_debugfs_pm_prv_buffer_fops = {
 
 void amdgpu_debugfs_pm_init(struct amdgpu_device *adev)
 {
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 	struct drm_minor *minor = adev_to_drm(adev)->primary;
 	struct dentry *root = minor->debugfs_root;
 

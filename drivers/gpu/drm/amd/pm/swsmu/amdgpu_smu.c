@@ -2952,7 +2952,7 @@ int smu_stb_collect_info(struct smu_context *smu, void *buf, uint32_t size)
 	return smu->ppt_funcs->stb_collect_info(smu, buf, size);
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 static int smu_stb_debugfs_open(struct inode *inode, struct file *filp)
 {
@@ -3021,7 +3021,7 @@ static const struct file_operations smu_stb_debugfs_fops = {
 
 void amdgpu_smu_stb_debug_fs_init(struct amdgpu_device *adev)
 {
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 	struct smu_context *smu = adev->powerplay.pp_handle;
 

@@ -361,7 +361,7 @@ int amdgpu_sa_bo_new(struct amdgpu_sa_manager *sa_manager,
 void amdgpu_sa_bo_free(struct amdgpu_device *adev,
 			      struct amdgpu_sa_bo **sa_bo,
 			      struct dma_fence *fence);
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 void amdgpu_sa_bo_dump_debug_info(struct amdgpu_sa_manager *sa_manager,
 					 struct seq_file *m);
 u64 amdgpu_bo_print_info(int id, struct amdgpu_bo *bo, struct seq_file *m);

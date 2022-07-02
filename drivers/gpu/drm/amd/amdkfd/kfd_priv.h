@@ -1349,7 +1349,7 @@ static inline int kfd_devcgroup_check_permission(struct kfd_dev *kfd)
 }
 
 /* Debugfs */
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 void kfd_debugfs_init(void);
 void kfd_debugfs_fini(void);

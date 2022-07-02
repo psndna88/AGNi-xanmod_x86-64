@@ -43,7 +43,7 @@ config DEBUG_KERNEL_DC
 config DRM_AMD_SECURE_DISPLAY
         bool "Enable secure display support"
         default n
-        depends on DEBUG_FS
+        depends on DEBUG__FS
         depends on DRM_AMD_DC_DCN
         help
             Choose this option if you want to

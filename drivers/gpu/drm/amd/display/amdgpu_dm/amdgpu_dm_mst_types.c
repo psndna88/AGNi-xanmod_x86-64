@@ -41,7 +41,7 @@
 
 #include "i2caux_interface.h"
 #include "dmub_cmd.h"
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 #include "amdgpu_dm_debugfs.h"
 #endif
 
@@ -132,7 +132,7 @@ amdgpu_dm_mst_connector_late_register(struct drm_connector *connector)
 	if (r < 0)
 		return r;
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 	connector_debugfs_init(amdgpu_dm_connector);
 #endif
 

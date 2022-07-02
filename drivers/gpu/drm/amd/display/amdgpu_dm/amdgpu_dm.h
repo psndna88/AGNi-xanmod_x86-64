@@ -604,7 +604,7 @@ struct amdgpu_dm_connector {
 	struct mutex hpd_lock;
 
 	bool fake_enable;
-#ifdef CONFIG_DEBUG_FS
+#ifdef CONFIG_DEBUG__FS
 	uint32_t debugfs_dpcd_address;
 	uint32_t debugfs_dpcd_size;
 #endif

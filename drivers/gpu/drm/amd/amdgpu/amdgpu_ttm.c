@@ -2159,7 +2159,7 @@ int amdgpu_ttm_evict_resources(struct amdgpu_device *adev, int mem_type)
 	return ttm_resource_manager_evict_all(&adev->mman.bdev, man);
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 static int amdgpu_mm_vram_table_show(struct seq_file *m, void *unused)
 {
@@ -2429,7 +2429,7 @@ static const struct file_operations amdgpu_ttm_iomem_fops = {
 
 void amdgpu_ttm_debugfs_init(struct amdgpu_device *adev)
 {
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 	struct drm_minor *minor = adev_to_drm(adev)->primary;
 	struct dentry *root = minor->debugfs_root;
 

@@ -39,7 +39,7 @@ ifdef CONFIG_DRM_AMD_DC_HDCP
 AMDGPUDM += amdgpu_dm_hdcp.o
 endif
 
-ifneq ($(CONFIG_DEBUG_FS),)
+ifneq ($(CONFIG_DEBUG__FS),)
 AMDGPUDM += amdgpu_dm_crc.o amdgpu_dm_debugfs.o
 endif
 

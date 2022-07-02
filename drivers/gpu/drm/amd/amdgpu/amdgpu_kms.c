@@ -1347,7 +1347,7 @@ void amdgpu_disable_vblank_kms(struct drm_crtc *crtc)
 /*
  * Debugfs info
  */
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 static int amdgpu_debugfs_firmware_info_show(struct seq_file *m, void *unused)
 {
@@ -1572,7 +1572,7 @@ DEFINE_SHOW_ATTRIBUTE(amdgpu_debugfs_firmware_info);
 
 void amdgpu_debugfs_firmware_init(struct amdgpu_device *adev)
 {
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 	struct drm_minor *minor = adev_to_drm(adev)->primary;
 	struct dentry *root = minor->debugfs_root;
 

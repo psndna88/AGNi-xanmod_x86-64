@@ -36,7 +36,7 @@ struct dm_irq_params {
 	bool allow_psr_entry;
 	struct mod_freesync_config freesync_config;
 
-#ifdef CONFIG_DEBUG_FS
+#ifdef CONFIG_DEBUG__FS
 	enum amdgpu_dm_pipe_crc_source crc_src;
 #ifdef CONFIG_DRM_AMD_SECURE_DISPLAY
 	struct crc_window_parm crc_window;

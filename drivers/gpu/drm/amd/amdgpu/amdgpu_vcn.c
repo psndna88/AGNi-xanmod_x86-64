@@ -998,7 +998,7 @@ void amdgpu_vcn_setup_ucode(struct amdgpu_device *adev)
 /*
  * debugfs for mapping vcn firmware log buffer.
  */
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 static ssize_t amdgpu_debugfs_vcn_fwlog_read(struct file *f, char __user *buf,
                                              size_t size, loff_t *pos)
 {
@@ -1069,7 +1069,7 @@ static const struct file_operations amdgpu_debugfs_vcnfwlog_fops = {
 void amdgpu_debugfs_vcn_fwlog_init(struct amdgpu_device *adev, uint8_t i,
                                    struct amdgpu_vcn_inst *vcn)
 {
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 	struct drm_minor *minor = adev_to_drm(adev)->primary;
 	struct dentry *root = minor->debugfs_root;
 	char name[32];
@@ -1083,7 +1083,7 @@ void amdgpu_debugfs_vcn_fwlog_init(struct amdgpu_device *adev, uint8_t i,
 
 void amdgpu_vcn_fwlog_init(struct amdgpu_vcn_inst *vcn)
 {
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 	volatile uint32_t *flag = vcn->fw_shared.cpu_addr;
 	void *fw_log_cpu_addr = vcn->fw_shared.cpu_addr + vcn->fw_shared.mem_size;
 	uint64_t fw_log_gpu_addr = vcn->fw_shared.gpu_addr + vcn->fw_shared.mem_size;

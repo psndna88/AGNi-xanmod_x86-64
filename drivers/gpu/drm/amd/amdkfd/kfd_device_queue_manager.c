@@ -2199,7 +2199,7 @@ static void kfd_process_hw_exception(struct work_struct *work)
 	amdgpu_amdkfd_gpu_reset(dqm->dev->adev);
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 static void seq_reg_dump(struct seq_file *m,
 			 uint32_t (*dump)[2], uint32_t n_regs)

@@ -1103,7 +1103,7 @@ unsigned int kfd_get_num_xgmi_sdma_engines(struct kfd_dev *kdev)
 	return kdev->adev->sdma.num_instances - kfd_get_num_sdma_engines(kdev);
 }
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG__FS)
 
 /* This function will send a package to HIQ to hang the HWS
  * which will trigger a GPU reset and bring the HWS back to normal state
