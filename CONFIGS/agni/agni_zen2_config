@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 6.0.7 Kernel Configuration
+# Linux/x86 6.0.9 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0"
 CONFIG_CC_IS_GCC=y
@@ -28,7 +28,7 @@ CONFIG_TT_SCHED=y
 CONFIG_INIT_ENV_ARG_LIMIT=32
 # CONFIG_COMPILE_TEST is not set
 # CONFIG_WERROR is not set
-CONFIG_LOCALVERSION="-tt-agni-v2.4-zen2"
+CONFIG_LOCALVERSION="-tt-agni-v2.5-zen2"
 # CONFIG_LOCALVERSION_AUTO is not set
 CONFIG_BUILD_SALT=""
 CONFIG_HAVE_KERNEL_GZIP=y
