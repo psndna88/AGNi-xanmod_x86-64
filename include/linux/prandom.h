@@ -13,6 +13,11 @@
 #include <linux/percpu.h>
 #include <linux/random.h>
 
+static inline u32 prandom_u32(void)
+{
+	return get_random_u32();
+}
+
 struct rnd_state {
 	__u32 s1, s2, s3, s4;
 };
