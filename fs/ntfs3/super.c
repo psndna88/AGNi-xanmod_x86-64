@@ -1490,6 +1490,14 @@ free_opts:
 // clang-format off
 static struct file_system_type ntfs_fs_type = {
 	.owner			= THIS_MODULE,
+	.name			= "ntfs",
+	.init_fs_context	= ntfs_init_fs_context,
+	.parameters		= ntfs_fs_parameters,
+	.kill_sb		= kill_block_super,
+	.fs_flags		= FS_REQUIRES_DEV | FS_ALLOW_IDMAP,
+};
+static struct file_system_type ntfs_fs_type3 = {
+	.owner			= THIS_MODULE,
 	.name			= "ntfs3",
 	.init_fs_context	= ntfs_init_fs_context,
 	.parameters		= ntfs_fs_parameters,
@@ -1525,6 +1533,7 @@ static int __init init_ntfs_fs(void)
 	}
 
 	err = register_filesystem(&ntfs_fs_type);
+	err = register_filesystem(&ntfs_fs_type3);
 	if (err)
 		goto out;
 
@@ -1541,6 +1550,7 @@ static void __exit exit_ntfs_fs(void)
 	rcu_barrier();
 	kmem_cache_destroy(ntfs_inode_cachep);
 	unregister_filesystem(&ntfs_fs_type);
+	unregister_filesystem(&ntfs_fs_type3);
 	ntfs3_exit_bitmap();
 }
 
