@@ -4899,10 +4899,12 @@ s32 rtw_monitor_xmit_entry(struct sk_buff *skb, struct net_device *ndev)
 	if (unlikely(skb->len < rtap_len))
 		goto fail;
 
+#ifndef CONFIG_MONITOR_MODE_XMIT
 	if (rtap_len != 12) {
 		RTW_INFO("radiotap len (should be 14): %d\n", rtap_len);
 		goto fail;
 	}
+#endif /* CONFIG_MONITOR_MODE_XMIT */
 	_rtw_pktfile_read(&pktfile, dummybuf, rtap_len-sizeof(struct ieee80211_radiotap_header));
 	len = len - rtap_len;
 #endif
@@ -5159,12 +5161,14 @@ s32 rtw_xmit(_adapter *padapter, _pkt **ppkt, u16 os_qid)
 	if (IS_CH_WAITING(adapter_to_rfctl(padapter)))
 		return -1;
 
+#if !defined(RHEL8)
 	if ((rtw_linked_check(padapter) == _FALSE)
 #ifdef CONFIG_LAYER2_ROAMING
 		&&(!padapter->mlmepriv.roam_network)
 #endif
 	   )
 		return -1;
+#endif
 
 	if (start == 0)
 		start = rtw_get_current_time();
