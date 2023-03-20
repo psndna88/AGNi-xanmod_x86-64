@@ -72,7 +72,7 @@ int rtw_scan_mode = 1;/* active, passive */
 #else
 	int rtw_wow_power_mgnt = PS_MODE_ACTIVE;
 	int rtw_wow_lps_level = LPS_NORMAL;
-#endif	
+#endif
 #endif /* CONFIG_WOWLAN */
 
 #else /* !CONFIG_POWER_SAVING */
@@ -118,7 +118,7 @@ MODULE_PARM_DESC(rtw_wow_lps_1t1r, "The default WOW LPS 1T1R setting");
 #endif
 #endif /* CONFIG_WOWLAN */
 
-/* LPS: 
+/* LPS:
  * rtw_smart_ps = 0 => TX: pwr bit = 1, RX: PS_Poll
  * rtw_smart_ps = 1 => TX: pwr bit = 0, RX: PS_Poll
  * rtw_smart_ps = 2 => TX: pwr bit = 0, RX: NullData with pwr bit = 0
@@ -127,8 +127,8 @@ int rtw_smart_ps = 2;
 
 int rtw_max_bss_cnt = 0;
 module_param(rtw_max_bss_cnt, int, 0644);
-#ifdef CONFIG_WMMPS_STA	
-/* WMMPS: 
+#ifdef CONFIG_WMMPS_STA
+/* WMMPS:
  * rtw_smart_ps = 0 => Only for fw test
  * rtw_smart_ps = 1 => Refer to Beacon's TIM Bitmap
  * rtw_smart_ps = 2 => Don't refer to Beacon's TIM Bitmap
@@ -142,8 +142,8 @@ int rtw_check_fw_ps = 1;
 int rtw_early_mode = 1;
 #endif
 
-#ifdef CONFIG_RTW_SW_LED
-int rtw_led_ctrl = 1; /* default led blink */
+#ifdef CONFIG_SW_LED
+int rtw_led_ctrl = 1; // default to normal blinking
 #endif
 
 int rtw_usb_rxagg_mode = 2;/* RX_AGG_DMA=1, RX_AGG_USB=2 */
@@ -200,7 +200,7 @@ int rtw_uapsd_ac_enable = 0x0;
 	/*PHYDM API, must enable by default*/
 	int rtw_pwrtrim_enable = 1;
 #else
-	int rtw_pwrtrim_enable = 0; /* Default Enalbe  power trim by efuse config */
+	int rtw_pwrtrim_enable = 0; /* Default Enable power trim by efuse config */
 #endif
 
 #if CONFIG_TX_AC_LIFETIME
@@ -617,9 +617,9 @@ module_param(rtw_pci_aspm_enable, int, 0644);
 module_param(rtw_early_mode, int, 0644);
 #endif
 
-#ifdef CONFIG_RTW_SW_LED
+#ifdef CONFIG_SW_LED
 module_param(rtw_led_ctrl, int, 0644);
-MODULE_PARM_DESC(rtw_led_ctrl,"led control, 0:led off, 1:led blink, 2:led on");
+MODULE_PARM_DESC(rtw_led_ctrl,"Led Control: 0=Always off, 1=Normal blink, 2=Always on");
 #endif
 
 #ifdef CONFIG_ADAPTOR_INFO_CACHING_FILE
@@ -1318,7 +1318,7 @@ uint loadparam(_adapter *padapter)
 #ifdef CONFIG_TX_EARLY_MODE
 	registry_par->early_mode = (u8)rtw_early_mode;
 #endif
-#ifdef CONFIG_RTW_SW_LED
+#ifdef CONFIG_SW_LED
 	registry_par->led_ctrl = (u8)rtw_led_ctrl;
 #endif
 	registry_par->trx_path_bmp = (u8)rtw_trx_path_bmp;

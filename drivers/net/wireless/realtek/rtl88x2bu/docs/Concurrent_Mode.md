@@ -1,12 +1,12 @@
-2021-12-18
+2022-12-27
 
 What is Concurrent Mode?
 
-Concurrent Mode creates 2 wireless network interfaces (wlan0, wlan1) and
-those two interfaces share the same WiFi adapter.
+Concurrent Mode creates 2 wireless network interfaces (wlan0, wlan1) and those
+two interfaces share the same WiFi adapter.
 
-This feature allows performing 2 separate wireless tasks at the same
-time with a single WiFi adapter.
+This feature allows performing 2 separate wireless tasks at the same time with a
+single WiFi adapter.
 
 For example:
 
@@ -14,53 +14,52 @@ Use station mode (also called managed or client mode) to connect with an
 AP to access the internet at the same time as it also performs as an AP
 to allow other devices to connect to the second interface.
 
-Note: Concurrent Mode only supports 3 combinations
+Note: Only supports 3 combinations
 
 1. Station mode + Station mode
 2. Station mode + AP mode
 3. Station mode + P2P mode
 
+Note: Monitor mode is not supported.
+
 -----
 
 How do I Enable Concurrent Mode?
 
-Run the following as instructed during the installation process:
+Edit the `Makefile` with a text editor:
 
 ```
-./cmode-on.sh
+nano Makefile
 ```
 
-Once the driver is fully installed and you have rebooted the system, you
-can verify that this works by typing the “iw dev” command, You should
-see two wireless interfaces, and the MAC address of secondary interface
-is nearly the same as the first except for one digit.
-
------
-
-How do I Disable Concurrent Mode?
-
-Step 1: Open a terminal (e.g. Ctrl+Alt+T)
-
-Step 2: Move to the driver directory
+Change the following line:
 
 ```
-cd ~/src/88x2bu-20210702
+#EXTRA_CFLAGS += -DCONFIG_CONCURRENT_MODE
 ```
 
-Step 3: Run the cmode-off.sh script
+to 
 
 ```
-sudo ./cmode-off.sh
+EXTRA_CFLAGS += -DCONFIG_CONCURRENT_MODE
 ```
 
-Step 4: Run the remove-driver.sh script
+and then install the driver per the installation steps. If
+the driver is already installed, run the following first:
 
 ```
 sudo ./remove-driver.sh
 ```
+and then reinstall the driver with:
 
-Step 5: Follow the installation instructions but do not run the
-optional `cmode-on.sh` script.
+```
+sudo ./install-driver.sh
+```
+
+Once the driver is fully installed and you have rebooted the system, you
+can verify that this works by typing the “iw dev” command. You should
+see two wireless interfaces, and the MAC address of the secondary interface
+is nearly the same as the first except for one digit.
 
 -----
 
