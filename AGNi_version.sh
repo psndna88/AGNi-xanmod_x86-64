@@ -4,9 +4,9 @@
 KERNELDIR=`readlink -f .`
 
 export AGNI_VERSION="v3.1"
-export AGNI_KERNEL_LINUX="6.2.9"
+export AGNI_KERNEL_LINUX="6.2.10"
 sed -i 's/agni-v3.0/agni-v3.1/' $KERNELDIR/CONFIGS/agni/agni*config
-sed -i 's/6.2.8 Kernel/6.2.9 Kernel/' $KERNELDIR/CONFIGS/agni/agni*config
+sed -i 's/6.2.9 Kernel/6.2.10 Kernel/' $KERNELDIR/CONFIGS/agni/agni*config
 
 echo "	AGNi Version info loaded."
 
