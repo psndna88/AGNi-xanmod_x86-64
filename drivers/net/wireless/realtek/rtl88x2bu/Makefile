@@ -44,8 +44,25 @@ EXTRA_LDFLAGS += --strip-debug
 CONFIG_AUTOCFG_CP = n
 
 RHEL_VER := $(shell echo `grep '^ID_LIKE'  /etc/os-release |grep -qi 'fedora' && grep '^VERSION_ID' /etc/os-release | cut -f2 -d= | cut -c2`)
+ifdef RHEL_VER
+ifdef KVER
+RHEL_SVER := $(shell echo $(KVER) |sed -e 's/^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*-\([0-9][0-9]*\).*/\1/')
+else
+RHEL_SVER := $(shell uname -r |sed -e 's/^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*-\([0-9][0-9]*\).*/\1/')
+endif
+
 ifeq (${RHEL_VER},8)
 EXTRA_CFLAGS += -DRHEL8
+ifeq ($(shell test $(RHEL_SVER) -ge 477; echo $$?),0)
+EXTRA_CFLAGS += -DRHEL88
+endif
+endif
+
+ifeq (${RHEL_VER},9)
+ifeq ($(shell test $(RHEL_SVER) -ge 284; echo $$?),0)
+EXTRA_CFLAGS += -DRHEL92 -DRHEL88
+endif
+endif
 endif
 
 ########################## WIFI IC ############################
@@ -124,7 +141,7 @@ endif
 CONFIG_RTW_DEBUG = y
 # default log level is _DRV_INFO_ = 4,
 # please refer to "How_to_set_driver_debug_log_level.doc" to set the available level.
-CONFIG_RTW_LOG_LEVEL = 1
+CONFIG_RTW_LOG_LEVEL = 0
 
 # enable /proc/net/rtlxxxx/ debug interfaces
 CONFIG_PROC_DEBUG = n
@@ -151,14 +168,14 @@ CONFIG_AP_WOWLAN = n
 ######### Notify SDIO Host Keep Power During Syspend ##########
 CONFIG_RTW_SDIO_PM_KEEP_POWER = y
 ###################### MP HW TX MODE FOR VHT #######################
-CONFIG_MP_VHT_HW_TX_MODE = n
+CONFIG_MP_VHT_HW_TX_MODE = y
 ###################### ROAMING #####################################
 CONFIG_LAYER2_ROAMING = y
 #bit0: ROAM_ON_EXPIRED, #bit1: ROAM_ON_RESUME, #bit2: ROAM_ACTIVE
 CONFIG_ROAMING_FLAG = 0x3
 ###################### Platform Related #######################
-CONFIG_PLATFORM_AUTODETECT = y
-CONFIG_PLATFORM_I386_PC = n
+CONFIG_PLATFORM_AUTODETECT = n
+CONFIG_PLATFORM_I386_PC = y
 CONFIG_PLATFORM_ANDROID_X86 = n
 CONFIG_PLATFORM_ANDROID_INTEL_X86 = n
 CONFIG_PLATFORM_JB_X86 = n
@@ -1317,13 +1334,14 @@ endif
 
 ifeq ($(CONFIG_MP_VHT_HW_TX_MODE), y)
 EXTRA_CFLAGS += -DCONFIG_MP_VHT_HW_TX_MODE
+endif
+
 ifeq ($(CONFIG_PLATFORM_I386_PC), y)
 ## For I386 X86 ToolChain use Hardware FLOATING
 EXTRA_CFLAGS += -mhard-float
 else
 ## For ARM ToolChain use Hardware FLOATING
 EXTRA_CFLAGS += -mfloat-abi=hard
-endif
 endif
 
 ifeq ($(CONFIG_APPEND_VENDOR_IE_ENABLE), y)
@@ -1348,7 +1366,7 @@ endif
 EXTRA_CFLAGS += -DDM_ODM_SUPPORT_TYPE=0x04
 
 ifeq ($(CONFIG_RTW_MBO), y)
-EXTRA_CFLAGS += -DCONFIG_RTW_MBO -DCONFIG_RTW_80211K -DCONFIG_RTW_WNM -DCONFIG_RTW_BTM_ROAM
+EXTRA_CFLAGS += -DCONFIG_RTW_MBO -DCONFIG_RTW_WNM -DCONFIG_RTW_BTM_ROAM
 EXTRA_CFLAGS += -DCONFIG_RTW_80211R
 endif
 
