@@ -10,6 +10,9 @@
 #include <linux/in.h>
 #include <linux/acpi.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,4,10)
+#include <net/gso.h>
+#endif
 #if defined(RTL8152_S5_WOL) && defined(CONFIG_PM)
 #include <linux/reboot.h>
 #endif /* defined(RTL8152_S5_WOL) && defined(CONFIG_PM) */
