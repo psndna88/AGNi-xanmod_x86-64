@@ -2884,6 +2884,9 @@ static int r8152_poll(struct napi_struct *napi, int budget)
 {
 	struct r8152 *tp = container_of(napi, struct r8152, napi);
 
+	if (!budget)
+		return 0;
+
 	return __r8152_poll(tp, budget);
 }
 
