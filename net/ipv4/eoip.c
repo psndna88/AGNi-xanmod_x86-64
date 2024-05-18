@@ -33,6 +33,7 @@
 #include <linux/netfilter_ipv4.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
+#include <linux/version.h>
 
 #include <net/sock.h>
 #include <net/ip.h>
@@ -178,6 +179,9 @@ static struct ip_tunnel *eoip_tunnel_find(struct net *net,
 	return t;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0))
+#define strlcpy strscpy
+#endif
 static struct ip_tunnel *eoip_tunnel_locate(struct net *net,
 		struct ip_tunnel_parm *parms, int create)
 {
