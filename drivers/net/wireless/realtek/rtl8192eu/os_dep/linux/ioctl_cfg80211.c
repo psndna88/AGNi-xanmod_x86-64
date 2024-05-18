@@ -396,8 +396,10 @@ u8 rtw_cfg80211_ch_switch_notify(_adapter *adapter, u8 ch, u8 bw, u8 offset, u8 
 	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef
 	#if ((LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2)) && (LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)))
 	,0);
-	#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
+	#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0) && (LINUX_VERSION_CODE < KERNEL_VERSION(6, 9, 0)))
 	,0 ,0);
+	#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0))
+	,0);
 	#else
 	);
 	#endif
@@ -4469,14 +4471,22 @@ static int cfg80211_rtw_start_ap(struct wiphy *wiphy, struct net_device *ndev,
 }
 
 static int cfg80211_rtw_change_beacon(struct wiphy *wiphy, struct net_device *ndev,
-		struct cfg80211_beacon_data *info)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0)) || defined(RHEL94)
+	struct cfg80211_ap_update *info)
+#else
+	struct cfg80211_beacon_data *info)
+#endif
 {
 	int ret = 0;
 	_adapter *adapter = (_adapter *)rtw_netdev_priv(ndev);
 
 	RTW_INFO(FUNC_NDEV_FMT"\n", FUNC_NDEV_ARG(ndev));
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0)) || defined(RHEL94)
+	ret = rtw_add_beacon(adapter, info->beacon.head, info->beacon.head_len, info->beacon.tail, info->beacon.tail_len);
+#else
 	ret = rtw_add_beacon(adapter, info->head, info->head_len, info->tail, info->tail_len);
+#endif
 
 	return ret;
 }
