@@ -63,14 +63,14 @@ the hardware to test the above.
 ### Compatible Kernels
 
 - Kernels: 4.19 - 5.11 (Realtek)
-- Kernels: 5.12 - 6.5  (community support)
+- Kernels: 5.12 - 6.9  (community support)
 
 Note: Kernels earlier than 4.19 may work but are not tested or
 supported.
 
 ### Tested Compilers
 
-- gcc 10, 11, 12 and 13
+- gcc 11, 12 and 13
 
 ### Tested Linux Distributions
 
@@ -91,7 +91,7 @@ which can be provided via PR or message in Issues.
 
 - [openSUSE](https://www.opensuse.org/) Tumbleweed (rolling) (kernel 5.15)
 
-- [Raspberry Pi OS](https://www.raspberrypi.org) (2023-05-03)(ARM 32 bit and 64 bit) (kernel 6.1.38)
+- [Raspberry Pi OS](https://www.raspberrypi.org) (2023-10-10) (ARM and ARM64) (kernel 6.1)
 
 - [Raspberry Pi Desktop](https://www.raspberrypi.org) (2022-07-01) (x86 32 bit) (kernel 5.10)
 
@@ -101,9 +101,7 @@ which can be provided via PR or message in Issues.
 
 - [Void Linux](https://voidlinux.org/) (kernel 5.18)
 
-- RHEL 8.4, 8.6, 8.8, 9.1 and 9.2 ( kernel 5.14.0-284.11.1.el9_2.x86_64)
-
-- Rocky 9.1 and 9.2
+- RHEL 8.4, 8.6, 8.8, 8.9, 9.1, 9.2, 9.3 and 9.4 
 
 Note: Red Hat Enterprise Linux (RHEL) and distros based on RHEL are
 supported by Red Hat devs due to the way kernel patches are handled in
@@ -152,10 +150,9 @@ adapters.
 Note: If you decide to buy an adapter that is supported by this driver,
 I recommend you search for an adapter that is `single-state and
 single-function`. Multi-function adapters, wifi and bluetooth, can be
-problematic. The rtl8852bu chipset is multi-fuction. The rtl8832bu
-chipset is single-function. For advice about single-state and
-multi-state adapters. click [here](https://github.com/morrownr/USB-WiFi)
-and look for Main Menu item 1.
+problematic. For advice about single-state and multi-state adapters, 
+click [here](https://github.com/morrownr/USB-WiFi) and look for Main
+Menu item 1.
 
 ### Installation Information
 
@@ -326,9 +323,6 @@ sudo apt install -y build-essential dkms git iw
 
 - Option for Fedora
 
-Note: Fedora users should also install `openssl` if secure boot is
-active.
-
 ```
 sudo dnf -y install git dkms kernel-devel
 ```
@@ -406,13 +400,17 @@ compile the kernel that is in use:
 
 Example of bad situation:
 
+```
 gcc 12.1 (used to compile the kernel)
 gcc 10.3 (version of gcc in use)
+```
 
 Example of good situation:
 
+```
 gcc 12.2 (used to compile the kernel)
 gcc 12.1 (version of gcc in use)
+```
 
 To determine the values:
 
@@ -716,6 +714,15 @@ on the computer.
 push the capabilities of the power available via USB port. One example
 is adapters that use the Realtek 8814au chipset. Using a powered
 multiport USB extension can be a good idea in cases like this.
+
+-----
+
+To Contribute:
+
+Fork this repository.
+Make your edits.
+TEST THEM!
+Create a pull request.
 
 -----
 

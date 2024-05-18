@@ -16,7 +16,11 @@
 #
 # $ sudo sh install-driver.sh
 #
-# Copyright(c) 2023 Nick Morrow
+# To check for errors and to check that this script does not require bash:
+#
+# $ shellcheck remove-driver.sh
+#
+# Copyright(c) 2024 Nick Morrow
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -28,31 +32,32 @@
 # GNU General Public License for more details.
 
 SCRIPT_NAME="install-driver.sh"
-SCRIPT_VERSION="20230830"
+SCRIPT_VERSION="20240222"
+
+MODULE_NAME="88x2bu"
 
 DRV_NAME="rtl88x2bu"
 DRV_VERSION="5.13.1"
-MODULE_NAME="88x2bu"
-
-#KARCH="$(uname -m)"
-if [ -z "${KARCH+1}" ]; then
-	KARCH="$(uname -m)"
-fi
-
-#KVER="$(uname -r)"
-if [ -z "${KVER+1}" ]; then
-	KVER="$(uname -r)"
-fi
-
-#GARCH="$(uname -m | sed -e "s/i.86/i386/; s/ppc/powerpc/; s/armv.l/arm/; s/aarch64/arm64/; s/riscv.*/riscv/;")"
-if [ -z "${GARCH+1}" ]; then
-	GARCH="$(uname -m | sed -e "s/i.86/i386/; s/ppc/powerpc/; s/armv.l/arm/; s/aarch64/arm64/; s/riscv.*/riscv/;")"
-fi
-
 DRV_DIR="$(pwd)"
 
-MODDESTDIR="/lib/modules/${KVER}/kernel/drivers/net/wireless/"
 OPTIONS_FILE="${MODULE_NAME}.conf"
+
+KARCH="$(uname -m)"
+#if [ -z "${KARCH+1}" ]; then
+#	KARCH="$(uname -m)"
+#fi
+
+KVER="$(uname -r)"
+#if [ -z "${KVER+1}" ]; then
+#	KVER="$(uname -r)"
+#fi
+
+MODDESTDIR="/lib/modules/${KVER}/kernel/drivers/net/wireless/"
+
+GARCH="$(uname -m | sed -e "s/i.86/i386/; s/ppc/powerpc/; s/armv.l/arm/; s/aarch64/arm64/; s/riscv.*/riscv/;")"
+#if [ -z "${GARCH+1}" ]; then
+#	GARCH="$(uname -m | sed -e "s/i.86/i386/; s/ppc/powerpc/; s/armv.l/arm/; s/aarch64/arm64/; s/riscv.*/riscv/;")"
+#fi
 
 # check to ensure sudo or su - was used to start the script
 if [ "$(id -u)" -ne 0 ]; then
@@ -150,15 +155,13 @@ echo ": ---------------------------"
 # displays script name and version
 echo ": ${SCRIPT_NAME} v${SCRIPT_VERSION}"
 
-# information that helps with bug reports
-
 # display kernel architecture
 echo ": ${KARCH} (kernel architecture)"
 
 # display architecture to send to gcc
 echo ": ${GARCH} (architecture to send to gcc)"
 
-SMEM=$(LANG=C free | awk '/Mem:/ { print $2 }')
+SMEM=$(LC_ALL=C free | awk '/Mem:/ { print $2 }')
 sproc=$(nproc)
 # avoid Out of Memory condition in low-RAM systems by limiting core usage
 if [ "$sproc" -gt 1 ]; then
@@ -195,34 +198,16 @@ if command -v dkms >/dev/null 2>&1; then
 	echo ": ""${dkms_ver}"
 fi
 
-# display secure mode status
+# display Secure Boot status
 if command -v mokutil >/dev/null 2>&1; then
-	if mokutil --sb-state | grep -i  enabled >/dev/null 2>&1; then
-		echo ": SecureBoot enabled"
-	fi
-	if mokutil --sb-state | grep -i  disabled >/dev/null 2>&1; then
-		echo ": SecureBoot disabled"
-	fi
-	if mokutil --sb-state | grep -i  EFI >/dev/null 2>&1; then
-		echo ": EFI variables are not supported on this system"
-	fi
+	case $(mokutil --sb-state 2>&1) in
+		*enabled*) echo ": SecureBoot enabled" ;;
+		*disabled*) echo ": SecureBoot disabled" ;;
+		*) echo ": This system doesn't support Secure Boot" ;;
+	esac
 else
-	echo ": mokutil not installed"
+	echo ": mokutil not installed (Secure Boot status unknown)"
 fi
-# need to fix the following
-#: ---------------------------
-#: install-driver.sh v20230718
-#: x86_64 (system architecture)
-#: x86_64 (gcc architecture)
-#: 4/4 (in-use/total processing units)
-#: 16283584 (total system memory)
-#: 5.19.0-50-generic (kernel version)
-#: gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0
-#: dkms-2.8.7
-#This system doesn't support Secure Boot
-#This system doesn't support Secure Boot
-#This system doesn't support Secure Boot
-#: ---------------------------
 
 echo ": ---------------------------"
 echo
@@ -245,6 +230,7 @@ fi
 
 # check for and remove non-dkms installations
 # with rtl added to module name (PClinuxOS)
+# Dear PCLinuxOS devs, the driver name uses rtl, the module name does not.
 if [ -f "${MODDESTDIR}rtl${MODULE_NAME}.ko" ]; then
 	echo "Removing a non-dkms installation: ${MODDESTDIR}rtl${MODULE_NAME}.ko"
 	rm -f "${MODDESTDIR}"rtl${MODULE_NAME}.ko
@@ -260,7 +246,6 @@ fi
 # check for and remove non-dkms installations
 # with compressed module in a unique non-standard location (Armbian)
 # Example: /usr/lib/modules/5.15.80-rockchip64/kernel/drivers/net/wireless/rtl8821cu/8821cu.ko.xz
-# Dear Armbiam, this is a really bad idea.
 if [ -f "/usr/lib/modules/${KVER}/kernel/drivers/net/wireless/${DRV_NAME}/${MODULE_NAME}.ko.xz" ]; then
 	echo "Removing a non-dkms installation: /usr/lib/modules/${KVER}/kernel/drivers/net/wireless/${DRV_NAME}/${MODULE_NAME}.ko.xz"
 	rm -f /usr/lib/modules/"${KVER}"/kernel/drivers/net/wireless/${DRV_NAME}/${MODULE_NAME}.ko.xz
@@ -273,34 +258,25 @@ if [ -f "/usr/lib/modules/${KVER}/kernel/drivers/net/wireless/${DRV_NAME}/${MODU
 	echo "Removal complete."
 fi
 
-# check for and remove all dkms installations with DRV_NAME
-#
-# dkms status [module/module-version] [-k kernel/arch]
-#
-# $ dkms status
-#
-# nvidia/535.86.05, 6.2.0-27-generic, x86_64: installed
-# nvidia/535.86.05, 6.5.0-060500rc5-generic, x86_64: installed
-# rtl8852bu/1.19.3, 6.2.0-27-generic, x86_64: installed
-# rtl8852bu/1.19.3, 6.5.0-060500rc5-generic, x86_64: installed
-# rtl8852bu/1.15.2, 6.5.0-060500rc5-generic, x86_64: installed
-#
-# dkms remove [module/module-version] [-k kernel/arch] [--all]
-#
-# $ dkms remove "${modname}/${modver}" -c "/usr/src/${modname}-${modver}/dkms.conf" --all
+# check for and remove dkms installations
 #
 if command -v dkms >/dev/null 2>&1; then
-	dkms status | while IFS="/, " read -r modname modver kerver _dummy; do
-		case "$modname" in *${MODULE_NAME})
-			echo "--> ${modname} ${modver} ${kerver}"
-			dkms remove -m "${modname}" -v "${modver}" -k "${kerver}" -c "/usr/src/${modname}-${modver}/dkms.conf"
+	dkms status | while IFS="/,: " read -r drvname drvver kerver _dummy; do
+		case "$drvname" in *${MODULE_NAME})
+			if [ "${kerver}" = "added" ]; then
+				dkms remove -m "${drvname}" -v "${drvver}" --all
+			else
+				dkms remove -m "${drvname}" -v "${drvver}" -k "${kerver}" -c "/usr/src/${drvname}-${drvver}/dkms.conf"
+			fi
 		esac
 	done
 	if [ -f /etc/modprobe.d/${OPTIONS_FILE} ]; then
-		rm -f /etc/modprobe.d/${OPTIONS_FILE}
+		echo "Removing ${OPTIONS_FILE} from /etc/modprobe.d"
+		rm /etc/modprobe.d/${OPTIONS_FILE}
 	fi
-	if [ -f /usr/src/${DRV_NAME}-${DRV_VERSION} ]; then
-		rm -rf /usr/src/${DRV_NAME}-${DRV_VERSION}
+	if [ -d /usr/src/${DRV_NAME}-${DRV_VERSION} ]; then
+		echo "Removing source files from /usr/src/${DRV_NAME}-${DRV_VERSION}"
+		rm -r /usr/src/${DRV_NAME}-${DRV_VERSION}
 	fi
 fi
 
@@ -363,11 +339,11 @@ else
 
 # 	the dkms add command requires source in /usr/src/${DRV_NAME}-${DRV_VERSION}
 	echo "Copying source files to /usr/src/${DRV_NAME}-${DRV_VERSION}"
-	cp -rf "${DRV_DIR}" /usr/src/${DRV_NAME}-${DRV_VERSION}
-#	echo "${DRV_DIR}"
-#	echo "/usr/src/${DRV_NAME}-${DRV_VERSION}"
+	cp -r "${DRV_DIR}" /usr/src/${DRV_NAME}-${DRV_VERSION}
 
-	dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER}/${KARCH}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf"
+
+	dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf"
+#	dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER/${KARCH}}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf"
 	RESULT=$?
 
 #	RESULT will be 3 if the DKMS tree already contains the same module/version
@@ -393,9 +369,11 @@ else
 	fi
 
 	if command -v /usr/bin/time >/dev/null 2>&1; then
-		/usr/bin/time -f "Compile time: %U seconds" dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER}/${KARCH}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf"
+		/usr/bin/time -f "Compile time: %U seconds" dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf" --force
+#		/usr/bin/time -f "Compile time: %U seconds" dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER}/${KARCH}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf" --force
 	else
-		dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER}/${KARCH}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf"
+		dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf" --force
+#		dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER}/${KARCH}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf" --force
 	fi
 	RESULT=$?
 
@@ -411,7 +389,8 @@ else
 		echo ": ---------------------------"
 	fi
 
-	dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER}/${KARCH}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf"
+	dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf" --force
+#	dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k "${KVER}/${KARCH}" -c "/usr/src/${DRV_NAME}-${DRV_VERSION}/dkms.conf" --force
 	RESULT=$?
 
 	if [ "$RESULT" != "0" ]; then
@@ -436,8 +415,10 @@ echo "$ sudo sh install-driver.sh"
 echo
 echo "Note: Updates to this driver SHOULD be performed before distro"
 echo "      upgrades such as Ubuntu 23.10 to 24.04."
+echo "Note: Updates to this driver SHOULD be performed before major"
+echo "      upgrades such as kernel 6.5 to 6.6."
 echo "Note: Updates can be performed as often as you like. It is"
-echo "      recommended to update at least every 2 months."
+echo "      recommended to update at least every 3 months."
 echo "Note: Work on this driver, like the Linux kernel, is continuous."
 echo
 echo "Enjoy!"
