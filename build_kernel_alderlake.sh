@@ -7,7 +7,7 @@ KERNELDIR=`readlink -f .`
 DEVICE="x86"
 CONFIG="agni_alderlake_config"
 SYNC_CONFIG=1
-export AGNI_BUILD_TYPE="amd_alderlake-x86-64"
+export AGNI_BUILD_TYPE="intel_alderlake-x86-64"
 
 . $KERNELDIR/AGNi_version.sh
 
