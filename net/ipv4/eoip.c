@@ -117,7 +117,7 @@ static struct ip_tunnel *eoip_tunnel_lookup(struct net_device *dev,
 }
 
 static struct ip_tunnel __rcu **__eoip_bucket(struct eoip_net *ign,
-		struct ip_tunnel_parm *parms)
+		struct ip_tunnel_parm_kern *parms)
 {
 	__be32 key = parms->i_key;
 	unsigned int h = HASH(key);
@@ -155,7 +155,7 @@ static void eoip_tunnel_unlink(struct eoip_net *ign, struct ip_tunnel *t)
 }
 
 static struct ip_tunnel *eoip_tunnel_find(struct net *net,
-						struct ip_tunnel_parm *parms,
+						struct ip_tunnel_parm_kern *parms,
 						int type)
 {
 	__be32 remote = parms->iph.daddr;
@@ -183,7 +183,7 @@ static struct ip_tunnel *eoip_tunnel_find(struct net *net,
 #define strlcpy strscpy
 #endif
 static struct ip_tunnel *eoip_tunnel_locate(struct net *net,
-		struct ip_tunnel_parm *parms, int create)
+		struct ip_tunnel_parm_kern *parms, int create)
 {
 	struct ip_tunnel *t, *nt;
 	struct net_device *dev;
@@ -665,7 +665,7 @@ out:
 }
 
 static void eoip_netlink_parms(struct nlattr *data[],
-				struct ip_tunnel_parm *parms)
+				struct ip_tunnel_parm_kern *parms)
 {
 	memset(parms, 0, sizeof(*parms));
 
@@ -776,7 +776,7 @@ static int eoip_changelink(struct net_device *dev, struct nlattr *tb[],
 	struct ip_tunnel *t, *nt;
 	struct net *net = dev_net(dev);
 	struct eoip_net *ign = net_generic(net, eoip_net_id);
-	struct ip_tunnel_parm p;
+	struct ip_tunnel_parm_kern p;
 	int mtu;
 
 	nt = netdev_priv(dev);
@@ -832,7 +832,7 @@ static size_t eoip_get_size(const struct net_device *dev)
 static int eoip_fill_info(struct sk_buff *skb, const struct net_device *dev)
 {
 	struct ip_tunnel *t = netdev_priv(dev);
-	struct ip_tunnel_parm *p = &t->parms;
+	struct ip_tunnel_parm_kern *p = &t->parms;
 
 	if (nla_put_u32(skb, IFLA_GRE_LINK, p->link) ||
 		nla_put_be32(skb, IFLA_GRE_IKEY, p->i_key) ||
