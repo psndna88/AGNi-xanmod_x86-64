@@ -27,11 +27,11 @@ int hv_get_hypervisor_version(union hv_hypervisor_version_info *info)
 	return 0;
 }
 
-static int __init hyperv_init(void)
+void __init hyperv_early_init(void)
 {
 	struct hv_get_vp_registers_output	result;
+	u32	a, b, c, d;
 	u64	guest_id;
-	int	ret;
 
 	/*
 	 * Allow for a kernel built with CONFIG_HYPERV to be running in
@@ -39,10 +39,10 @@ static int __init hyperv_init(void)
 	 * In such cases, do nothing and return success.
 	 */
 	if (acpi_disabled)
-		return 0;
+		return;
 
 	if (strncmp((char *)&acpi_gbl_FADT.hypervisor_id, "MsHyperV", 8))
-		return 0;
+		return;
 
 	/* Setup the guest ID */
 	guest_id = hv_generate_guest_id(LINUX_VERSION_CODE);
@@ -61,6 +61,22 @@ static int __init hyperv_init(void)
 		ms_hyperv.features, ms_hyperv.priv_high, ms_hyperv.hints,
 		ms_hyperv.misc_features);
 
+	/* Get information about the Hyper-V host version */
+	hv_get_vpreg_128(HV_REGISTER_HYPERVISOR_VERSION, &result);
+	a = result.as32.a;
+	b = result.as32.b;
+	c = result.as32.c;
+	d = result.as32.d;
+	pr_info("Hyper-V: Host Build %d.%d.%d.%d-%d-%d\n",
+		b >> 16, b & 0xFFFF, a,	d & 0xFFFFFF, c, d >> 24);
+
+	hyperv_initialized = true;
+}
+
+static int __init hyperv_init(void)
+{
+	int ret;
+
 	ret = hv_common_init();
 	if (ret)
 		return ret;
@@ -73,8 +89,6 @@ static int __init hyperv_init(void)
 	}
 
 	ms_hyperv_late_init();
-
-	hyperv_initialized = true;
 	return 0;
 }
 
