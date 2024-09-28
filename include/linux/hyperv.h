@@ -794,6 +794,8 @@ enum vmbus_device_type {
 	HV_FCOPY,
 	HV_BACKUP,
 	HV_DM,
+	HV_GPUP_DXGK_GLOBAL,
+	HV_GPUP_DXGK_VGPU,
 	HV_UNKNOWN,
 };
 

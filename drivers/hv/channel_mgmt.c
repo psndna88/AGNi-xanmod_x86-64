@@ -142,6 +142,20 @@ const struct vmbus_device vmbus_devs[] = {
 	  .allowed_in_isolated = false,
 	},
 
+	/* GPU paravirtualization global */
+	{ .dev_type = HV_GPUP_DXGK_GLOBAL,
+	  HV_GPUP_DXGK_GLOBAL_GUID,
+	  .perf_device = false,
+	  .allowed_in_isolated = false,
+	},
+
+	/* GPU paravirtualization per virtual GPU */
+	{ .dev_type = HV_GPUP_DXGK_VGPU,
+	  HV_GPUP_DXGK_VGPU_GUID,
+	  .perf_device = false,
+	  .allowed_in_isolated = false,
+	},
+	
 	/*
 	 * Unknown GUID
 	 * 64 KB ring buffer + 4 KB header should be sufficient size for any Hyper-V device apart
