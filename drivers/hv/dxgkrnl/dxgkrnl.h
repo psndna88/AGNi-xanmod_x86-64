@@ -28,6 +28,7 @@
 #include <linux/hyperv.h>
 #include <uapi/misc/d3dkmthk.h>
 #include <linux/version.h>
+#include <linux/vmalloc.h>
 #include "misc.h"
 #include "hmgr.h"
 #include <uapi/misc/d3dkmthk.h>
