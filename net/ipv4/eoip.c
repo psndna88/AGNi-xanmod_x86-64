@@ -729,7 +729,9 @@ static void eoip_setup(struct net_device *dev)
 	dev->priv_destructor = eoip_dev_free;
 
 	dev->ifindex = 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
 	dev->features |= NETIF_F_NETNS_LOCAL;
+#endif
 }
 
 static int eoip_newlink(struct net *src_net, struct net_device *dev,
@@ -757,7 +759,9 @@ static int eoip_newlink(struct net *src_net, struct net_device *dev,
 	mtu = eoip_tunnel_bind_dev(dev);
 
 	/* Can use a lockless transmit, we do not generate output sequences */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
 	dev->features |= NETIF_F_LLTX;
+#endif
 
 	err = register_netdevice(dev);
 	if (err)
