@@ -4,10 +4,45 @@ export SUBARCH=x86
 
 KERNELDIR=`readlink -f .`
 
+echo " "
+echo " 1: generic       	x86-64 build"
+echo " 2: amd zen2       	x86-64 build"
+echo " 3: intel ivy bridge     	x86-64 build"
+echo " 4: intel westmere       	x86-64 build"
+echo " 5: intel broadwell      	x86-64 build"
+echo " 6: intel alderlake      	x86-64 build"
+echo " "
+echo " 0:  X  Exit Compilation  X"
+echo " "
+read -p "    Select type of config : " choice
+
+if [ $choice -eq 1 ]; then
+	CONFIG="agni_generic_config"
+	export AGNI_BUILD_TYPE="generic-x86-64"
+elif [ $choice -eq 2 ]; then
+	CONFIG="agni_zen2_config"
+	export AGNI_BUILD_TYPE="zen2-x86-64"
+elif [ $choice -eq 3 ]; then
+	CONFIG="agni_ivybridge_config"
+	export AGNI_BUILD_TYPE="ivybridge-x86-64"
+elif [ $choice -eq 4 ]; then
+	CONFIG="agni_westmere_config"
+	export AGNI_BUILD_TYPE="westmere-x86-64"
+elif [ $choice -eq 5 ]; then
+	CONFIG="agni_broadwell_config"
+	export AGNI_BUILD_TYPE="broadwell-x86-64"
+elif [ $choice -eq 6 ]; then
+	CONFIG="agni_alderlake_config"
+	export AGNI_BUILD_TYPE="alderlake-x86-64"
+elif [ $choice -eq 0 ]; then
+	exit
+else
+	echo " "
+	echo -e "====> Enter corrent input <===="
+fi
+
 DEVICE="x86"
-CONFIG="agni_generic_config"
 SYNC_CONFIG=1
-export AGNI_BUILD_TYPE="generic-x86-64"
 
 . $KERNELDIR/AGNi_version.sh
 
@@ -46,7 +81,7 @@ rm $KERNELDIR/.config $KERNELDIR/.config.old 2>/dev/null
 	cp -f agni_firmware_extract.sh $KERNELDIR/DEB_TEMP/
 	cp -f scripts/package/firmware/ath10k/qca9377/firmware-5.bin.wlan $KERNELDIR/DEB_TEMP/
 	cp -f scripts/package/firmware/rtl8188fu/rtl8188fufw.bin.wlan $KERNELDIR/DEB_TEMP/
-	cp -f scripts/package/firmware/eoip.eoip $KERNELDIR/DEB_TEMP/
+#	cp -f scripts/package/firmware/eoip.eoip $KERNELDIR/DEB_TEMP/
 	chmod +x $KERNELDIR/DEB_TEMP/agni_firmware_extract.sh
 	chmod +x $KERNELDIR/DEB_TEMP/install_agni.sh
 	makeself --gzip --threads $BUILDJOBS --needroot --nomd5 --nocrc --quiet $KERNELDIR/DEB_TEMP/ AGNi-kernel-$AGNI_VERSION-debian-$AGNI_KERNEL_LINUX-$AGNI_BUILD_TYPE.run AGNi_kernel_x86-64 ./install_agni.sh
