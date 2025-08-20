@@ -5,40 +5,49 @@ export SUBARCH=x86
 KERNELDIR=`readlink -f .`
 
 echo " "
-echo " 1: generic       	x86-64 build"
-echo " 2: amd zen2       	x86-64 build"
-echo " 3: intel ivy bridge     	x86-64 build"
-echo " 4: intel westmere       	x86-64 build"
-echo " 5: intel broadwell      	x86-64 build"
-echo " 6: intel alderlake      	x86-64 build"
+echo " 1: generic         x86-64 build"
+echo " 2: amd zen2        x86-64 build"
+echo " 3: intel ivybridge    x86-64 build"
+echo " 4: intel westmere     x86-64 build"
+echo " 5: intel broadwell    x86-64 build"
+echo " 6: intel alderlake    x86-64 build"
+echo " 7: ALL VARIANTS    build all listed variants"
 echo " "
 echo " 0:  X  Exit Compilation  X"
 echo " "
 read -p "    Select type of config : " choice
 
+# Define arrays for configurations and build types
+declare -a CONFIGS
+declare -a BUILD_TYPES
+
 if [ $choice -eq 1 ]; then
-	CONFIG="agni_generic_config"
-	export AGNI_BUILD_TYPE="generic-x86-64"
+    CONFIGS=("agni_generic_config")
+    BUILD_TYPES=("generic-x86-64")
 elif [ $choice -eq 2 ]; then
-	CONFIG="agni_zen2_config"
-	export AGNI_BUILD_TYPE="zen2-x86-64"
+    CONFIGS=("agni_zen2_config")
+    BUILD_TYPES=("zen2-x86-64")
 elif [ $choice -eq 3 ]; then
-	CONFIG="agni_ivybridge_config"
-	export AGNI_BUILD_TYPE="ivybridge-x86-64"
+    CONFIGS=("agni_ivybridge_config")
+    BUILD_TYPES=("ivybridge-x86-64")
 elif [ $choice -eq 4 ]; then
-	CONFIG="agni_westmere_config"
-	export AGNI_BUILD_TYPE="westmere-x86-64"
+    CONFIGS=("agni_westmere_config")
+    BUILD_TYPES=("westmere-x86-64")
 elif [ $choice -eq 5 ]; then
-	CONFIG="agni_broadwell_config"
-	export AGNI_BUILD_TYPE="broadwell-x86-64"
+    CONFIGS=("agni_broadwell_config")
+    BUILD_TYPES=("broadwell-x86-64")
 elif [ $choice -eq 6 ]; then
-	CONFIG="agni_alderlake_config"
-	export AGNI_BUILD_TYPE="alderlake-x86-64"
+    CONFIGS=("agni_alderlake_config")
+    BUILD_TYPES=("alderlake-x86-64")
+elif [ $choice -eq 7 ]; then
+    CONFIGS=("agni_generic_config" "agni_zen2_config" "agni_ivybridge_config" "agni_westmere_config" "agni_broadwell_config" "agni_alderlake_config")
+    BUILD_TYPES=("generic-x86-64" "zen2-x86-64" "ivybridge-x86-64" "westmere-x86-64" "broadwell-x86-64" "alderlake-x86-64")
 elif [ $choice -eq 0 ]; then
-	exit
+    exit
 else
-	echo " "
-	echo -e "====> Enter corrent input <===="
+    echo " "
+    echo -e "====> Enter correct input <===="
+    exit 1
 fi
 
 DEVICE="x86"
@@ -47,51 +56,47 @@ SYNC_CONFIG=1
 . $KERNELDIR/AGNi_version.sh
 
 if [ -f ~/WORKING_DIRECTORY/AGNi_stamp.sh ]; then
-	. ~/WORKING_DIRECTORY/AGNi_stamp.sh
+    . ~/WORKING_DIRECTORY/AGNi_stamp.sh
 fi
 
 if [ -d $BUILT_EXPORT ]; then
-	READY_ZIP="$BUILT_EXPORT"
+    READY_ZIP="$BUILT_EXPORT"
 else
-	mkdir -p $READY_ZIP 2>/dev/null
-	READY_ZIP="$KERNELDIR/READY_DIR"
+    mkdir -p $READY_ZIP 2>/dev/null
+    READY_ZIP="$KERNELDIR/READY_DIR"
 fi;
 
-echo ""
-echo " ~~~~~ Compiling AGNi kernel $AGNI_KERNEL_LINUX ~~~~~"
-echo "         VERSION: AGNi $AGNI_VERSION $AGNI_BUILD_TYPE"
-echo ""
+# Loop through all selected configurations and build types
+for i in "${!CONFIGS[@]}"; do
+    CONFIG="${CONFIGS[$i]}"
+    export AGNI_BUILD_TYPE="${BUILD_TYPES[$i]}"
 
-. $KERNELDIR/cleanbuild.sh
+    echo ""
+    echo " ~~~~~ Compiling AGNi kernel $AGNI_KERNEL_LINUX ~~~~~"
+    echo "       VERSION: AGNi $AGNI_VERSION $AGNI_BUILD_TYPE"
+    echo ""
 
-cp -f $KERNELDIR/CONFIGS/agni/$CONFIG $KERNELDIR/.config
-make -j`nproc --ignore=2` deb-pkg
+    . $KERNELDIR/cleanbuild.sh
 
-if [ $SYNC_CONFIG -eq 1 ]; then # SYNC CONFIG
-	cp -f $KERNELDIR/.config $KERNELDIR/CONFIGS/agni/$CONFIG
-fi
-rm $KERNELDIR/.config $KERNELDIR/.config.old 2>/dev/null
+    cp -f $KERNELDIR/CONFIGS/agni/$CONFIG $KERNELDIR/.config
+    make -j`nproc --ignore=2` deb-pkg
 
-#if ([ -f $KERNELDIR/../linux-headers*.deb ] && [ -f $KERNELDIR/../linux-image*.deb ] && [ -f $KERNELDIR/../linux-libc*.deb ]); then
-	cd $KERNELDIR
-	rm -rf $KERNELDIR/DEB_TEMP 2>/dev/null
-	mkdir $KERNELDIR/DEB_TEMP
-	mv -f $KERNELDIR/../linux*.deb $KERNELDIR/DEB_TEMP/
-	cp -f scripts/package/install_agni.sh $KERNELDIR/DEB_TEMP/
-	cp -f agni_firmware_extract.sh $KERNELDIR/DEB_TEMP/
-	cp -f scripts/package/firmware/ath10k/qca9377/firmware-5.bin.wlan $KERNELDIR/DEB_TEMP/
-	cp -f scripts/package/firmware/rtl8188fu/rtl8188fufw.bin.wlan $KERNELDIR/DEB_TEMP/
-#	cp -f scripts/package/firmware/eoip.eoip $KERNELDIR/DEB_TEMP/
-	chmod +x $KERNELDIR/DEB_TEMP/agni_firmware_extract.sh
-	chmod +x $KERNELDIR/DEB_TEMP/install_agni.sh
-	makeself --gzip --threads $BUILDJOBS --needroot --nomd5 --nocrc --quiet $KERNELDIR/DEB_TEMP/ AGNi-kernel-$AGNI_VERSION-debian-$AGNI_KERNEL_LINUX-$AGNI_BUILD_TYPE.run AGNi_kernel_x86-64 ./install_agni.sh
-	rm -rf $KERNELDIR/DEB_TEMP 2>/dev/null
-#	touch $KERNELDIR/AGNi-kernel-$AGNI_VERSION-debian-$AGNI_KERNEL_LINUX-$AGNI_BUILD_TYPE.md5
-#	echo "`md5sum AGNi-kernel*.run`" > $KERNELDIR/AGNi-kernel-$AGNI_VERSION-debian-$AGNI_KERNEL_LINUX-$AGNI_BUILD_TYPE.md5
-	mv -f $KERNELDIR/AGNi-kernel-$AGNI_VERSION-debian-$AGNI_KERNEL_LINUX-$AGNI_BUILD_TYPE* $READY_ZIP/
-#else
-#	echo "         ERROR: compiling AGNi kernel $DEVICE."
-#fi
+    if [ $SYNC_CONFIG -eq 1 ]; then # SYNC CONFIG
+        cp -f $KERNELDIR/.config $KERNELDIR/CONFIGS/agni/$CONFIG
+    fi
+    rm $KERNELDIR/.config $KERNELDIR/.config.old 2>/dev/null
+
+    cd $KERNELDIR
+    rm -rf $KERNELDIR/DEB_TEMP 2>/dev/null
+    mkdir $KERNELDIR/DEB_TEMP
+    mv -f $KERNELDIR/../linux*.deb $KERNELDIR/DEB_TEMP/
+    cp -f scripts/package/install_agni.sh $KERNELDIR/DEB_TEMP/
+    chmod +x $KERNELDIR/DEB_TEMP/install_agni.sh
+    makeself --gzip --threads $BUILDJOBS --needroot --nomd5 --nocrc --quiet $KERNELDIR/DEB_TEMP/ AGNi-kernel-$AGNI_VERSION-debian-$AGNI_KERNEL_LINUX-$AGNI_BUILD_TYPE.run AGNi_kernel_x86-64 ./install_agni.sh
+    rm -rf $KERNELDIR/DEB_TEMP 2>/dev/null
+    mv -f $KERNELDIR/AGNi-kernel-$AGNI_VERSION-debian-$AGNI_KERNEL_LINUX-$AGNI_BUILD_TYPE* $READY_ZIP/
+done
 
 echo ""
-
+echo "All selected kernel variants have been compiled and packaged."
+echo ""

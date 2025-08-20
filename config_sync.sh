@@ -4,7 +4,7 @@ export KERNELDIR=`readlink -f .`
 echo " "
 echo " 1: generic       	x86-64 build"
 echo " 2: amd zen2       	x86-64 build"
-echo " 3: intel ivy bridge     	x86-64 build"
+echo " 3: intel ivybridge     	x86-64 build"
 echo " 4: intel westmere       	x86-64 build"
 echo " 5: intel broadwell      	x86-64 build"
 echo " 6: intel alderlake      	x86-64 build"
@@ -16,11 +16,11 @@ if [ $choice -eq 1 ]; then
 	CONFIG="agni_generic_config"
 	TYPE="agni generic"
 elif [ $choice -eq 2 ]; then
-	CONFIG="agni_xen2_config"
+	CONFIG="agni_zen2_config"
 	TYPE="agni amd zen2"
 elif [ $choice -eq 3 ]; then
 	CONFIG="agni_ivybridge_config"
-	TYPE="agni intel ivy bridge"
+	TYPE="agni intel ivybridge"
 elif [ $choice -eq 4 ]; then
 	CONFIG="agni_westmere_config"
 	TYPE="agni intel westmere"
