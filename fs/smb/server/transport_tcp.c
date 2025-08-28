@@ -220,7 +220,9 @@ static int ksmbd_kthread_fn(void *p)
 	struct interface *iface = (struct interface *)p;
 	struct ksmbd_conn *conn;
 	int ret, inet_hash;
+#ifdef CONFIG_SMB_SERVER_SAME_IP_LIMIT
 	unsigned int max_ip_conns;
+#endif
 
 	while (!kthread_should_stop()) {
 		if (!iface->ksmbd_socket) {
@@ -232,6 +234,7 @@ static int ksmbd_kthread_fn(void *p)
 		if (ret)
 			continue;
 
+#ifdef CONFIG_SMB_SERVER_SAME_IP_LIMIT
 		if (!server_conf.max_ip_connections)
 			goto skip_max_ip_conns_limit;
 
@@ -278,6 +281,7 @@ static int ksmbd_kthread_fn(void *p)
 		}
 
 skip_max_ip_conns_limit:
+#endif
 		if (server_conf.max_connections &&
 		    atomic_inc_return(&active_num_conn) >= server_conf.max_connections) {
 			pr_info_ratelimited("Limit the maximum number of connections(%u)\n",
