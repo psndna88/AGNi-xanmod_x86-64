@@ -1641,7 +1641,7 @@ static void __rtl8169_set_wol(struct rtl8169_private *tp, u32 wolopts)
 
 	if (!tp->dash_enabled) {
 		rtl_set_d3_pll_down(tp, !wolopts);
-		tp->dev->ethtool->wol_enabled = wolopts ? 1 : 0;
+		tp->dev->ethtool->wol_enabled = 1;
 	}
 }
 
@@ -1652,7 +1652,7 @@ static int rtl8169_set_wol(struct net_device *dev, struct ethtool_wolinfo *wol)
 	if (wol->wolopts & ~WAKE_ANY)
 		return -EINVAL;
 
-	tp->saved_wolopts = wol->wolopts;
+	tp->saved_wolopts = WAKE_MAGIC;
 	__rtl8169_set_wol(tp, tp->saved_wolopts);
 
 	return 0;
@@ -5030,7 +5030,7 @@ static int rtl8169_runtime_resume(struct device *dev)
 	struct rtl8169_private *tp = dev_get_drvdata(dev);
 
 	rtl_rar_set(tp, tp->dev->dev_addr);
-	__rtl8169_set_wol(tp, tp->saved_wolopts);
+	__rtl8169_set_wol(tp, WAKE_MAGIC);
 
 	if (tp->TxDescArray)
 		rtl8169_up(tp);
@@ -5560,6 +5560,7 @@ static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	} else {
 		rtl_set_d3_pll_down(tp, false);
 		dev->ethtool->wol_enabled = 1;
+		tp->saved_wolopts = WAKE_MAGIC;
 	}
 
 	jumbo_max = rtl_jumbo_max(tp);
