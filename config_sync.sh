@@ -7,7 +7,8 @@ echo " 2: amd zen2       	x86-64 build"
 echo " 3: intel ivybridge     	x86-64 build"
 echo " 4: intel westmere       	x86-64 build"
 echo " 5: intel broadwell      	x86-64 build"
-echo " 6: intel alderlake      	x86-64 build"
+echo " 6: intel haswell         x86-64 build"
+echo " 7: intel alderlake      	x86-64 build"
 echo " 0:  X  Exit Compilation  X"
 echo " "
 read -p "    Select type of config : " choice
@@ -28,6 +29,9 @@ elif [ $choice -eq 5 ]; then
 	CONFIG="agni_broadwell_config"
 	TYPE="agni intel broadwell"
 elif [ $choice -eq 6 ]; then
+	CONFIG="agni_haswell_config"
+	TYPE="agni intel haswell"
+elif [ $choice -eq 7 ]; then
 	CONFIG="agni_alderlake_config"
 	TYPE="agni intel alderlake"
 elif [ $choice -eq 0 ]; then
