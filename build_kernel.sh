@@ -12,7 +12,7 @@ echo " 4: intel westmere     x86-64 build"
 echo " 5: intel broadwell    x86-64 build"
 echo " 6: intel haswell      x86-64 build"
 echo " 7: intel alderlake    x86-64 build"
-echo " a: ALL VARIANTS    build all listed variants"
+echo " 100: ALL VARIANTS    build all listed variants"
 echo " "
 echo " 0:  X  Exit Compilation  X"
 echo " "
@@ -43,7 +43,7 @@ elif [ $choice -eq 6 ]; then
 elif [ $choice -eq 7 ]; then
     CONFIGS=("agni_alderlake_config")
     BUILD_TYPES=("alderlake-x86-64")
-elif [ $choice -eq "a" ]; then
+elif [ $choice -eq 100 ]; then
     CONFIGS=("agni_generic_config" "agni_zen2_config" "agni_ivybridge_config" "agni_westmere_config" "agni_broadwell_config" "agni_haswell_config" "agni_alderlake_config")
     BUILD_TYPES=("generic-x86-64" "zen2-x86-64" "ivybridge-x86-64" "westmere-x86-64" "broadwell-x86-64" "haswell-x86-64" "alderlake-x86-64")
 elif [ $choice -eq 0 ]; then
