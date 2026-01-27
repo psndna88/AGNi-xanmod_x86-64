@@ -5,13 +5,13 @@ export SUBARCH=x86
 KERNELDIR=`readlink -f .`
 
 echo " "
-echo " 1: generic         x86-64 build"
-echo " 2: amd zen2        x86-64 build"
-echo " 3: intel ivybridge    x86-64 build"
-echo " 4: intel westmere     x86-64 build"
-echo " 5: intel broadwell    x86-64 build"
+echo " 1: generic            x86-64 build"
+echo " 2: intel ivybridge    x86-64 build"
+echo " 3: intel westmere     x86-64 build"
+echo " 4: intel broadwell    x86-64 build"
+echo " 5: intel haswell      x86-64 build"
 echo " 6: intel alderlake    x86-64 build"
-echo " 7: ALL VARIANTS    build all listed variants"
+echo " 100: ALL VARIANTS    build all listed variants"
 echo " "
 echo " 0:  X  Exit Compilation  X"
 echo " "
@@ -25,23 +25,23 @@ if [ $choice -eq 1 ]; then
     CONFIGS=("agni_generic_config")
     BUILD_TYPES=("generic-x86-64")
 elif [ $choice -eq 2 ]; then
-    CONFIGS=("agni_zen2_config")
-    BUILD_TYPES=("zen2-x86-64")
-elif [ $choice -eq 3 ]; then
     CONFIGS=("agni_ivybridge_config")
     BUILD_TYPES=("ivybridge-x86-64")
-elif [ $choice -eq 4 ]; then
+elif [ $choice -eq 3 ]; then
     CONFIGS=("agni_westmere_config")
     BUILD_TYPES=("westmere-x86-64")
-elif [ $choice -eq 5 ]; then
+elif [ $choice -eq 4 ]; then
     CONFIGS=("agni_broadwell_config")
     BUILD_TYPES=("broadwell-x86-64")
+elif [ $choice -eq 5 ]; then
+    CONFIGS=("agni_haswell_config")
+    BUILD_TYPES=("haswell-x86-64")
 elif [ $choice -eq 6 ]; then
     CONFIGS=("agni_alderlake_config")
     BUILD_TYPES=("alderlake-x86-64")
-elif [ $choice -eq 7 ]; then
-    CONFIGS=("agni_generic_config" "agni_zen2_config" "agni_ivybridge_config" "agni_westmere_config" "agni_broadwell_config" "agni_alderlake_config")
-    BUILD_TYPES=("generic-x86-64" "zen2-x86-64" "ivybridge-x86-64" "westmere-x86-64" "broadwell-x86-64" "alderlake-x86-64")
+elif [ $choice -eq 100 ]; then
+    CONFIGS=("agni_generic_config" "agni_ivybridge_config" "agni_westmere_config" "agni_broadwell_config" "agni_haswell_config" "agni_alderlake_config")
+    BUILD_TYPES=("generic-x86-64" "ivybridge-x86-64" "westmere-x86-64" "broadwell-x86-64" "haswell-x86-64" "alderlake-x86-64")
 elif [ $choice -eq 0 ]; then
     exit
 else
@@ -79,8 +79,11 @@ for i in "${!CONFIGS[@]}"; do
     . $KERNELDIR/cleanbuild.sh
 
     cp -f $KERNELDIR/CONFIGS/agni/$CONFIG $KERNELDIR/.config
-    make -j`nproc --ignore=2` deb-pkg
-
+    if [ $CCACHE_PREFIX = "" ]; then
+        KBUILD_BUILD_TIMESTAMP='' make -j`nproc --ignore=2` deb-pkg
+    else
+        KBUILD_BUILD_TIMESTAMP='' make -j$(($(distcc -j) + 2)) deb-pkg
+    fi
     if [ $SYNC_CONFIG -eq 1 ]; then # SYNC CONFIG
         cp -f $KERNELDIR/.config $KERNELDIR/CONFIGS/agni/$CONFIG
     fi
