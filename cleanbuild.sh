@@ -2,8 +2,8 @@
 export KERNELDIR=`readlink -f .`
 
 cd $KERNELDIR
-make clean
-make mrproper
+CCACHE_PREFIX="" make clean
+CCACHE_PREFIX="" make mrproper
 rm $KERNELDIR/linux*.gz 2>/dev/null
 rm $KERNELDIR/../linux*.deb 2>/dev/null
 rm $KERNELDIR/../linux*.gz 2>/dev/null

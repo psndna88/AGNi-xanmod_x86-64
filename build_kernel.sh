@@ -57,6 +57,10 @@ SYNC_CONFIG=1
 
 if [ -f ~/WORKING_DIRECTORY/AGNi_stamp.sh ]; then
     . ~/WORKING_DIRECTORY/AGNi_stamp.sh
+    if [ ! -d "$DISTCC_DIR/state" ]; then
+        mkdir -p "$DISTCC_DIR/state"
+        mkdir -p "$DISTCC_DIR/lock"
+    fi
 fi
 
 if [ -d $BUILT_EXPORT ]; then
@@ -82,7 +86,7 @@ for i in "${!CONFIGS[@]}"; do
     if [ $CCACHE_PREFIX = "" ]; then
         KBUILD_BUILD_TIMESTAMP='' make -j`nproc --ignore=2` deb-pkg
     else
-        KBUILD_BUILD_TIMESTAMP='' make -j$(($(distcc -j) + 2)) deb-pkg
+        KBUILD_BUILD_TIMESTAMP='' $DISTCC_WRAPPER make -j$(distcc -j) deb-pkg
     fi
     if [ $SYNC_CONFIG -eq 1 ]; then # SYNC CONFIG
         cp -f $KERNELDIR/.config $KERNELDIR/CONFIGS/agni/$CONFIG
