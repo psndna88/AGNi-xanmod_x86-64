@@ -79,7 +79,7 @@ for i in "${!CONFIGS[@]}"; do
     . $KERNELDIR/cleanbuild.sh
 
     cp -f $KERNELDIR/CONFIGS/agni/$CONFIG $KERNELDIR/.config
-    if [ $CCACHE_PREFIX = "" ]; then
+    if [ "$CCACHE_PREFIX" = "" ]; then
         KBUILD_BUILD_TIMESTAMP='' make -j`nproc --ignore=2` deb-pkg
     else
         KBUILD_BUILD_TIMESTAMP='' make -j$(($(distcc -j) + 2)) deb-pkg
