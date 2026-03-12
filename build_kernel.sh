@@ -7,10 +7,8 @@ KERNELDIR=`readlink -f .`
 echo " "
 echo " 1: generic            x86-64 build"
 echo " 2: intel ivybridge    x86-64 build"
-echo " 3: intel westmere     x86-64 build"
-echo " 4: intel broadwell    x86-64 build"
-echo " 5: intel haswell      x86-64 build"
-echo " 6: intel alderlake    x86-64 build"
+echo " 3: intel haswell      x86-64 build"
+echo " 4: intel alderlake    x86-64 build"
 echo " 100: ALL VARIANTS    build all listed variants"
 echo " "
 echo " 0:  X  Exit Compilation  X"
@@ -28,20 +26,14 @@ elif [ $choice -eq 2 ]; then
     CONFIGS=("agni_ivybridge_config")
     BUILD_TYPES=("ivybridge-x86-64")
 elif [ $choice -eq 3 ]; then
-    CONFIGS=("agni_westmere_config")
-    BUILD_TYPES=("westmere-x86-64")
-elif [ $choice -eq 4 ]; then
-    CONFIGS=("agni_broadwell_config")
-    BUILD_TYPES=("broadwell-x86-64")
-elif [ $choice -eq 5 ]; then
     CONFIGS=("agni_haswell_config")
     BUILD_TYPES=("haswell-x86-64")
-elif [ $choice -eq 6 ]; then
+elif [ $choice -eq 4 ]; then
     CONFIGS=("agni_alderlake_config")
     BUILD_TYPES=("alderlake-x86-64")
 elif [ $choice -eq 100 ]; then
-    CONFIGS=("agni_generic_config" "agni_ivybridge_config" "agni_westmere_config" "agni_broadwell_config" "agni_haswell_config" "agni_alderlake_config")
-    BUILD_TYPES=("generic-x86-64" "ivybridge-x86-64" "westmere-x86-64" "broadwell-x86-64" "haswell-x86-64" "alderlake-x86-64")
+    CONFIGS=("agni_generic_config" "agni_ivybridge_config" "agni_haswell_config" "agni_alderlake_config")
+    BUILD_TYPES=("generic-x86-64" "ivybridge-x86-64" "haswell-x86-64" "alderlake-x86-64")
 elif [ $choice -eq 0 ]; then
     exit
 else
