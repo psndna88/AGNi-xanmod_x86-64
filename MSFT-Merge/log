@@ -8,4 +8,4 @@ feature/dxgkrnl/6.18                               7645bb43d045d813c5a11a5746c28
 product/wsl/readme/6.18                            bbf044c25e1203bed3182cedae466235420e7e96
 product/wsl/security/6.18                          20778f3fd73f259549f66a8bea0227dbdfe3e170
 fix/virtiofs-dax-hang/6.18                         668def1339349ba0ff85f22b6244066a8369b022
-fix/hv_sock_eio/6.18                               d483c85de3de96c58957510cda5eb2b24e9b3d91
+fix/hv_sock_eio/6.18                               e256ef5ed9ce517323be79ad3268ec698533dca3
