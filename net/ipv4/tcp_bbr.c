@@ -849,6 +849,49 @@ static void bbr_update_ack_aggregation(struct sock *sk,
 		bbr->extra_acked[bbr->extra_acked_win_idx] = extra_acked;
 }
 
+/* Estimate when the pipe is full, using the change in delivery rate: BBR
+ * estimates that STARTUP filled the pipe if the estimated bw hasn't changed by
+ * at least bbr_full_bw_thresh (25%) after bbr_full_bw_cnt (3) non-app-limited
+ * rounds. Why 3 rounds: 1: rwin autotuning grows the rwin, 2: we fill the
+ * higher rwin, 3: we get higher delivery rate samples. Or transient
+ * cross-traffic or radio noise can go away. CUBIC Hystart shares a similar
+ * design goal, but uses delay and inter-ACK spacing instead of bandwidth.
+ */
+static void bbr_check_full_bw_reached(struct sock *sk,
+				      const struct rate_sample *rs)
+{
+	struct bbr *bbr = inet_csk_ca(sk);
+	u32 bw_thresh;
+
+	if (bbr_full_bw_reached(sk) || !bbr->round_start || rs->is_app_limited)
+		return;
+
+	bw_thresh = (u64)bbr->full_bw * bbr_full_bw_thresh >> BBR_SCALE;
+	if (bbr_max_bw(sk) >= bw_thresh) {
+		bbr->full_bw = bbr_max_bw(sk);
+		bbr->full_bw_cnt = 0;
+		return;
+	}
+	++bbr->full_bw_cnt;
+	bbr->full_bw_reached = bbr->full_bw_cnt >= bbr_full_bw_cnt;
+}
+
+/* If pipe is probably full, drain the queue and then enter steady-state. */
+static void bbr_check_drain(struct sock *sk, const struct rate_sample *rs)
+{
+	struct bbr *bbr = inet_csk_ca(sk);
+
+	if (bbr->mode == BBR_STARTUP && bbr_full_bw_reached(sk)) {
+		bbr->mode = BBR_DRAIN;	/* drain queue we created */
+		WRITE_ONCE(tcp_sk(sk)->snd_ssthresh,
+			   bbr_inflight(sk, bbr_max_bw(sk), BBR_UNIT));
+	}	/* fall through to check if in-flight is already small: */
+	if (bbr->mode == BBR_DRAIN &&
+	    bbr_packets_in_net_at_edt(sk, tcp_packets_in_flight(tcp_sk(sk))) <=
+	    bbr_inflight(sk, bbr_max_bw(sk), BBR_UNIT))
+		bbr_reset_probe_bw_mode(sk);  /* we estimate queue is drained */
+}
+
 static void bbr_check_probe_rtt_done(struct sock *sk)
 {
 	struct tcp_sock *tp = tcp_sk(sk);
@@ -2084,7 +2127,7 @@ __bpf_kfunc static void bbr_init(struct sock *sk)
 
 	bbr->init_cwnd = min(0x7FU, tcp_snd_cwnd(tp));
 	bbr->prior_cwnd = tp->prior_cwnd;
-	tp->snd_ssthresh = TCP_INFINITE_SSTHRESH;
+	WRITE_ONCE(tp->snd_ssthresh, TCP_INFINITE_SSTHRESH);
 	bbr->next_rtt_delivered = tp->delivered;
 	bbr->prev_ca_state = TCP_CA_Open;
 
