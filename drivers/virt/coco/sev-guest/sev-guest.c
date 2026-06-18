@@ -176,7 +176,6 @@ static int get_ext_report(struct snp_guest_dev *snp_dev, struct snp_guest_reques
 	struct snp_guest_req req = {};
 	int ret, npages = 0, resp_len;
 	sockptr_t certs_address;
-	u64 pfn;
 
 	if (sockptr_is_null(io->req_data) || sockptr_is_null(io->resp_data))
 		return -EINVAL;
@@ -216,11 +215,10 @@ static int get_ext_report(struct snp_guest_dev *snp_dev, struct snp_guest_reques
 	if (!req.certs_data)
 		return -ENOMEM;
 
-	pfn = PHYS_PFN(virt_to_phys(req.certs_data));
 	ret = set_memory_decrypted((unsigned long)req.certs_data, npages);
 	if (ret) {
 		pr_err("failed to mark page shared, ret=%d\n", ret);
-		snp_leak_pages(pfn, npages);
+		free_pages_exact(req.certs_data, npages << PAGE_SHIFT);
 		return -EFAULT;
 	}
 
@@ -274,12 +272,10 @@ e_free:
 	kfree(report_resp);
 e_free_data:
 	if (npages) {
-		if (set_memory_encrypted((unsigned long)req.certs_data, npages)) {
+		if (set_memory_encrypted((unsigned long)req.certs_data, npages))
 			WARN_ONCE(ret, "failed to restore encryption mask (leak it)\n");
-			snp_leak_pages(pfn, npages);
-		} else {
+		else
 			free_pages_exact(req.certs_data, npages << PAGE_SHIFT);
-		}
 	}
 	return ret;
 }

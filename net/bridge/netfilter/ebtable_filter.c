@@ -93,22 +93,24 @@ static struct pernet_operations frame_filter_net_ops = {
 
 static int __init ebtable_filter_init(void)
 {
-	int ret = register_pernet_subsys(&frame_filter_net_ops);
+	int ret = ebt_register_template(&frame_filter, frame_filter_table_init);
 
 	if (ret)
 		return ret;
 
-	ret = ebt_register_template(&frame_filter, frame_filter_table_init);
-	if (ret)
-		unregister_pernet_subsys(&frame_filter_net_ops);
+	ret = register_pernet_subsys(&frame_filter_net_ops);
+	if (ret) {
+		ebt_unregister_template(&frame_filter);
+		return ret;
+	}
 
-	return ret;
+	return 0;
 }
 
 static void __exit ebtable_filter_fini(void)
 {
-	ebt_unregister_template(&frame_filter);
 	unregister_pernet_subsys(&frame_filter_net_ops);
+	ebt_unregister_template(&frame_filter);
 }
 
 module_init(ebtable_filter_init);

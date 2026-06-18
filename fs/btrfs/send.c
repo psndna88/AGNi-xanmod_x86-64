@@ -1053,8 +1053,10 @@ static int iterate_inode_ref(struct btrfs_root *root, struct btrfs_path *path,
 				}
 				if (unlikely(start < p->buf)) {
 					btrfs_err(root->fs_info,
-			  "send: path ref buffer underflow for key " BTRFS_KEY_FMT,
-						  BTRFS_KEY_FMT_VALUE(found_key));
+			"send: path ref buffer underflow for key (%llu %u %llu)",
+						  found_key->objectid,
+						  found_key->type,
+						  found_key->offset);
 					ret = -EINVAL;
 					goto out;
 				}
@@ -7274,8 +7276,8 @@ static int search_key_again(const struct send_ctx *sctx,
 	if (unlikely(ret > 0)) {
 		btrfs_print_tree(path->nodes[path->lowest_level], false);
 		btrfs_err(root->fs_info,
-"send: key " BTRFS_KEY_FMT" not found in %s root %llu, lowest_level %d, slot %d",
-			  BTRFS_KEY_FMT_VALUE(key),
+"send: key (%llu %u %llu) not found in %s root %llu, lowest_level %d, slot %d",
+			  key->objectid, key->type, key->offset,
 			  (root == sctx->parent_root ? "parent" : "send"),
 			  btrfs_root_id(root), path->lowest_level,
 			  path->slots[path->lowest_level]);

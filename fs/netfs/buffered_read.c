@@ -156,8 +156,9 @@ static void netfs_read_cache_to_pagecache(struct netfs_io_request *rreq,
 			netfs_cache_read_terminated, subreq);
 }
 
-void netfs_queue_read(struct netfs_io_request *rreq,
-		      struct netfs_io_subrequest *subreq)
+static void netfs_queue_read(struct netfs_io_request *rreq,
+			     struct netfs_io_subrequest *subreq,
+			     bool last_subreq)
 {
 	struct netfs_io_stream *stream = &rreq->io_streams[0];
 
@@ -175,6 +176,11 @@ void netfs_queue_read(struct netfs_io_request *rreq,
 			/* Store list pointers before active flag */
 			smp_store_release(&stream->active, true);
 		}
+	}
+
+	if (last_subreq) {
+		smp_wmb(); /* Write lists before ALL_QUEUED. */
+		set_bit(NETFS_RREQ_ALL_QUEUED, &rreq->flags);
 	}
 
 	spin_unlock(&rreq->lock);
@@ -227,8 +233,6 @@ static void netfs_read_to_pagecache(struct netfs_io_request *rreq,
 		subreq->start	= start;
 		subreq->len	= size;
 
-		netfs_queue_read(rreq, subreq);
-
 		source = netfs_cache_prepare_read(rreq, subreq, rreq->i_size);
 		subreq->source = source;
 		if (source == NETFS_DOWNLOAD_FROM_SERVER) {
@@ -249,7 +253,6 @@ static void netfs_read_to_pagecache(struct netfs_io_request *rreq,
 				       rreq->debug_id, subreq->debug_index,
 				       subreq->len, size,
 				       subreq->start, ictx->zero_point, rreq->i_size);
-				netfs_cancel_read(subreq, ret);
 				break;
 			}
 			subreq->len = len;
@@ -258,7 +261,12 @@ static void netfs_read_to_pagecache(struct netfs_io_request *rreq,
 			if (rreq->netfs_ops->prepare_read) {
 				ret = rreq->netfs_ops->prepare_read(subreq);
 				if (ret < 0) {
-					netfs_cancel_read(subreq, ret);
+					subreq->error = ret;
+					/* Not queued - release both refs. */
+					netfs_put_subrequest(subreq,
+							     netfs_sreq_trace_put_cancel);
+					netfs_put_subrequest(subreq,
+							     netfs_sreq_trace_put_cancel);
 					break;
 				}
 				trace_netfs_sreq(subreq, netfs_sreq_trace_prepare);
@@ -281,29 +289,24 @@ static void netfs_read_to_pagecache(struct netfs_io_request *rreq,
 
 		pr_err("Unexpected read source %u\n", source);
 		WARN_ON_ONCE(1);
-		netfs_cancel_read(subreq, ret);
 		break;
 
 	issue:
 		slice = netfs_prepare_read_iterator(subreq, ractl);
 		if (slice < 0) {
 			ret = slice;
-			netfs_cancel_read(subreq, ret);
+			subreq->error = ret;
+			trace_netfs_sreq(subreq, netfs_sreq_trace_cancel);
+			/* Not queued - release both refs. */
+			netfs_put_subrequest(subreq, netfs_sreq_trace_put_cancel);
+			netfs_put_subrequest(subreq, netfs_sreq_trace_put_cancel);
 			break;
 		}
-		start += slice;
 		size -= slice;
-		if (size <= 0) {
-			smp_wmb(); /* Write lists before ALL_QUEUED. */
-			set_bit(NETFS_RREQ_ALL_QUEUED, &rreq->flags);
-		}
+		start += slice;
 
+		netfs_queue_read(rreq, subreq, size <= 0);
 		netfs_issue_read(rreq, subreq);
-
-		if (test_bit(NETFS_RREQ_PAUSE, &rreq->flags))
-			netfs_wait_for_paused_read(rreq);
-		if (test_bit(NETFS_RREQ_FAILED, &rreq->flags))
-			break;
 		cond_resched();
 	} while (size > 0);
 
@@ -394,7 +397,6 @@ static int netfs_read_gaps(struct file *file, struct folio *folio)
 {
 	struct netfs_io_request *rreq;
 	struct address_space *mapping = folio->mapping;
-	struct netfs_group *group = netfs_folio_group(folio);
 	struct netfs_folio *finfo = netfs_folio_info(folio);
 	struct netfs_inode *ctx = netfs_inode(mapping->host);
 	struct folio *sink = NULL;
@@ -456,20 +458,14 @@ static int netfs_read_gaps(struct file *file, struct folio *folio)
 
 	netfs_read_to_pagecache(rreq, NULL);
 
+	if (sink)
+		folio_put(sink);
+
 	ret = netfs_wait_for_read(rreq);
 	if (ret >= 0) {
-		if (group)
-			folio_change_private(folio, group);
-		else
-			folio_detach_private(folio);
-		kfree(finfo);
-		trace_netfs_folio(folio, netfs_folio_trace_filled_gaps);
 		flush_dcache_folio(folio);
 		folio_mark_uptodate(folio);
 	}
-
-	if (sink)
-		folio_put(sink);
 	folio_unlock(folio);
 	netfs_put_request(rreq, netfs_rreq_trace_put_return);
 	return ret < 0 ? ret : 0;
@@ -502,10 +498,10 @@ int netfs_read_folio(struct file *file, struct folio *folio)
 	struct netfs_inode *ctx = netfs_inode(mapping->host);
 	int ret;
 
-	folio_wait_writeback(folio);
-
-	if (folio_test_dirty(folio))
+	if (folio_test_dirty(folio)) {
+		trace_netfs_folio(folio, netfs_folio_trace_read_gaps);
 		return netfs_read_gaps(file, folio);
+	}
 
 	_enter("%lx", folio->index);
 
@@ -671,7 +667,7 @@ retry:
 		ret = PTR_ERR(rreq);
 		goto error;
 	}
-	rreq->no_unlock_folio	= folio;
+	rreq->no_unlock_folio	= folio->index;
 	__set_bit(NETFS_RREQ_NO_UNLOCK_FOLIO, &rreq->flags);
 
 	ret = netfs_begin_cache_read(rreq, ctx);
@@ -688,9 +684,9 @@ retry:
 
 	netfs_read_to_pagecache(rreq, NULL);
 	ret = netfs_wait_for_read(rreq);
-	netfs_put_request(rreq, netfs_rreq_trace_put_return);
 	if (ret < 0)
 		goto error;
+	netfs_put_request(rreq, netfs_rreq_trace_put_return);
 
 have_folio:
 	ret = folio_wait_private_2_killable(folio);
@@ -737,7 +733,7 @@ int netfs_prefetch_for_write(struct file *file, struct folio *folio,
 		goto error;
 	}
 
-	rreq->no_unlock_folio = folio;
+	rreq->no_unlock_folio = folio->index;
 	__set_bit(NETFS_RREQ_NO_UNLOCK_FOLIO, &rreq->flags);
 	ret = netfs_begin_cache_read(rreq, ctx);
 	if (ret == -ENOMEM || ret == -EINTR || ret == -ERESTARTSYS)

@@ -112,22 +112,24 @@ static struct pernet_operations broute_net_ops = {
 
 static int __init ebtable_broute_init(void)
 {
-	int ret = register_pernet_subsys(&broute_net_ops);
+	int ret = ebt_register_template(&broute_table, broute_table_init);
 
 	if (ret)
 		return ret;
 
-	ret = ebt_register_template(&broute_table, broute_table_init);
-	if (ret)
-		unregister_pernet_subsys(&broute_net_ops);
+	ret = register_pernet_subsys(&broute_net_ops);
+	if (ret) {
+		ebt_unregister_template(&broute_table);
+		return ret;
+	}
 
-	return ret;
+	return 0;
 }
 
 static void __exit ebtable_broute_fini(void)
 {
-	ebt_unregister_template(&broute_table);
 	unregister_pernet_subsys(&broute_net_ops);
+	ebt_unregister_template(&broute_table);
 }
 
 module_init(ebtable_broute_init);

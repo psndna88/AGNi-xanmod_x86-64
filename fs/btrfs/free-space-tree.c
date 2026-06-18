@@ -841,7 +841,7 @@ int btrfs_remove_from_free_space_tree(struct btrfs_trans_handle *trans,
 				      u64 start, u64 size)
 {
 	struct btrfs_block_group *block_group;
-	BTRFS_PATH_AUTO_FREE(path);
+	struct btrfs_path *path;
 	int ret;
 
 	if (!btrfs_fs_compat_ro(trans->fs_info, FREE_SPACE_TREE))
@@ -851,7 +851,7 @@ int btrfs_remove_from_free_space_tree(struct btrfs_trans_handle *trans,
 	if (unlikely(!path)) {
 		ret = -ENOMEM;
 		btrfs_abort_transaction(trans, ret);
-		return ret;
+		goto out;
 	}
 
 	block_group = btrfs_lookup_block_group(trans->fs_info, start);
@@ -859,7 +859,7 @@ int btrfs_remove_from_free_space_tree(struct btrfs_trans_handle *trans,
 		DEBUG_WARN("no block group found for start=%llu", start);
 		ret = -ENOENT;
 		btrfs_abort_transaction(trans, ret);
-		return ret;
+		goto out;
 	}
 
 	mutex_lock(&block_group->free_space_lock);
@@ -869,7 +869,8 @@ int btrfs_remove_from_free_space_tree(struct btrfs_trans_handle *trans,
 		btrfs_abort_transaction(trans, ret);
 
 	btrfs_put_block_group(block_group);
-
+out:
+	btrfs_free_path(path);
 	return ret;
 }
 
@@ -1022,7 +1023,7 @@ int btrfs_add_to_free_space_tree(struct btrfs_trans_handle *trans,
 				 u64 start, u64 size)
 {
 	struct btrfs_block_group *block_group;
-	BTRFS_PATH_AUTO_FREE(path);
+	struct btrfs_path *path;
 	int ret;
 
 	if (!btrfs_fs_compat_ro(trans->fs_info, FREE_SPACE_TREE))
@@ -1032,7 +1033,7 @@ int btrfs_add_to_free_space_tree(struct btrfs_trans_handle *trans,
 	if (unlikely(!path)) {
 		ret = -ENOMEM;
 		btrfs_abort_transaction(trans, ret);
-		return ret;
+		goto out;
 	}
 
 	block_group = btrfs_lookup_block_group(trans->fs_info, start);
@@ -1040,7 +1041,7 @@ int btrfs_add_to_free_space_tree(struct btrfs_trans_handle *trans,
 		DEBUG_WARN("no block group found for start=%llu", start);
 		ret = -ENOENT;
 		btrfs_abort_transaction(trans, ret);
-		return ret;
+		goto out;
 	}
 
 	mutex_lock(&block_group->free_space_lock);
@@ -1050,7 +1051,8 @@ int btrfs_add_to_free_space_tree(struct btrfs_trans_handle *trans,
 		btrfs_abort_transaction(trans, ret);
 
 	btrfs_put_block_group(block_group);
-
+out:
+	btrfs_free_path(path);
 	return ret;
 }
 
@@ -1464,7 +1466,7 @@ int btrfs_remove_block_group_free_space(struct btrfs_trans_handle *trans,
 					struct btrfs_block_group *block_group)
 {
 	struct btrfs_root *root = btrfs_free_space_root(block_group);
-	BTRFS_PATH_AUTO_FREE(path);
+	struct btrfs_path *path;
 	struct btrfs_key key, found_key;
 	struct extent_buffer *leaf;
 	u64 start, end;
@@ -1483,7 +1485,7 @@ int btrfs_remove_block_group_free_space(struct btrfs_trans_handle *trans,
 	if (unlikely(!path)) {
 		ret = -ENOMEM;
 		btrfs_abort_transaction(trans, ret);
-		return ret;
+		goto out;
 	}
 
 	start = block_group->start;
@@ -1497,7 +1499,7 @@ int btrfs_remove_block_group_free_space(struct btrfs_trans_handle *trans,
 		ret = btrfs_search_prev_slot(trans, root, &key, path, -1, 1);
 		if (unlikely(ret)) {
 			btrfs_abort_transaction(trans, ret);
-			return ret;
+			goto out;
 		}
 
 		leaf = path->nodes[0];
@@ -1528,13 +1530,14 @@ int btrfs_remove_block_group_free_space(struct btrfs_trans_handle *trans,
 		ret = btrfs_del_items(trans, root, path, path->slots[0], nr);
 		if (unlikely(ret)) {
 			btrfs_abort_transaction(trans, ret);
-			return ret;
+			goto out;
 		}
 		btrfs_release_path(path);
 	}
 
 	ret = 0;
-
+out:
+	btrfs_free_path(path);
 	return ret;
 }
 

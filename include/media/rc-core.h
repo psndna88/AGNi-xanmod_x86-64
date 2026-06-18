@@ -81,6 +81,7 @@ struct lirc_fh {
 /**
  * struct rc_dev - represents a remote control device
  * @dev: driver model's view of this device
+ * @managed_alloc: devm_rc_allocate_device was used to create rc_dev
  * @registered: set to true by rc_register_device(), false by
  *	rc_unregister_device
  * @idle: used to keep track of RX state
@@ -155,6 +156,7 @@ struct lirc_fh {
  */
 struct rc_dev {
 	struct device			dev;
+	bool				managed_alloc;
 	bool				registered;
 	bool				idle;
 	bool				encode_wakeup;

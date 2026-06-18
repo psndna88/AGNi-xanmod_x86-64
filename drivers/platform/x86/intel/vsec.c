@@ -42,7 +42,7 @@ enum vsec_device_state {
 };
 
 struct vsec_priv {
-	const struct intel_vsec_platform_info *info;
+	struct intel_vsec_platform_info *info;
 	struct device *suppliers[VSEC_FEATURE_COUNT];
 	struct oobmsm_plat_info plat_info;
 	enum vsec_device_state state[VSEC_FEATURE_COUNT];
@@ -270,14 +270,15 @@ cleanup_aux:
 EXPORT_SYMBOL_NS_GPL(intel_vsec_add_aux, "INTEL_VSEC");
 
 static int intel_vsec_add_dev(struct pci_dev *pdev, struct intel_vsec_header *header,
-			      const struct intel_vsec_platform_info *info,
-			      unsigned long cap_id, u64 base_addr)
+			      struct intel_vsec_platform_info *info,
+			      unsigned long cap_id)
 {
 	struct intel_vsec_device __free(kfree) *intel_vsec_dev = NULL;
 	struct resource __free(kfree) *res = NULL;
 	struct resource *tmp;
 	struct device *parent;
 	unsigned long quirks = info->quirks;
+	u64 base_addr;
 	int i;
 
 	if (info->parent)
@@ -308,6 +309,11 @@ static int intel_vsec_add_dev(struct pci_dev *pdev, struct intel_vsec_header *he
 
 	if (quirks & VSEC_QUIRK_TABLE_SHIFT)
 		header->offset >>= TABLE_OFFSET_SHIFT;
+
+	if (info->base_addr)
+		base_addr = info->base_addr;
+	else
+		base_addr = pdev->resource[header->tbir].start;
 
 	/*
 	 * The DVSEC/VSEC contains the starting offset and count for a block of
@@ -406,8 +412,7 @@ static int get_cap_id(u32 header_id, unsigned long *cap_id)
 
 static int intel_vsec_register_device(struct pci_dev *pdev,
 				      struct intel_vsec_header *header,
-				      const struct intel_vsec_platform_info *info,
-				      u64 base_addr)
+				      struct intel_vsec_platform_info *info)
 {
 	const struct vsec_feature_dependency *consumer_deps;
 	struct vsec_priv *priv;
@@ -423,7 +428,7 @@ static int intel_vsec_register_device(struct pci_dev *pdev,
 	 * For others using the exported APIs, add the device directly.
 	 */
 	if (!pci_match_id(intel_vsec_pci_ids, pdev))
-		return intel_vsec_add_dev(pdev, header, info, cap_id, base_addr);
+		return intel_vsec_add_dev(pdev, header, info, cap_id);
 
 	priv = pci_get_drvdata(pdev);
 	if (priv->state[cap_id] == STATE_REGISTERED ||
@@ -439,7 +444,7 @@ static int intel_vsec_register_device(struct pci_dev *pdev,
 
 	consumer_deps = get_consumer_dependencies(priv, cap_id);
 	if (!consumer_deps || suppliers_ready(priv, consumer_deps, cap_id)) {
-		ret = intel_vsec_add_dev(pdev, header, info, cap_id, base_addr);
+		ret = intel_vsec_add_dev(pdev, header, info, cap_id);
 		if (ret)
 			priv->state[cap_id] = STATE_SKIP;
 		else
@@ -452,14 +457,14 @@ static int intel_vsec_register_device(struct pci_dev *pdev,
 }
 
 static bool intel_vsec_walk_header(struct pci_dev *pdev,
-				   const struct intel_vsec_platform_info *info)
+				   struct intel_vsec_platform_info *info)
 {
 	struct intel_vsec_header **header = info->headers;
 	bool have_devices = false;
 	int ret;
 
 	for ( ; *header; header++) {
-		ret = intel_vsec_register_device(pdev, *header, info, info->base_addr);
+		ret = intel_vsec_register_device(pdev, *header, info);
 		if (!ret)
 			have_devices = true;
 	}
@@ -468,7 +473,7 @@ static bool intel_vsec_walk_header(struct pci_dev *pdev,
 }
 
 static bool intel_vsec_walk_dvsec(struct pci_dev *pdev,
-				  const struct intel_vsec_platform_info *info)
+				  struct intel_vsec_platform_info *info)
 {
 	bool have_devices = false;
 	int pos = 0;
@@ -507,8 +512,7 @@ static bool intel_vsec_walk_dvsec(struct pci_dev *pdev,
 		pci_read_config_dword(pdev, pos + PCI_DVSEC_HEADER2, &hdr);
 		header.id = PCI_DVSEC_HEADER2_ID(hdr);
 
-		ret = intel_vsec_register_device(pdev, &header, info,
-						 pci_resource_start(pdev, header.tbir));
+		ret = intel_vsec_register_device(pdev, &header, info);
 		if (ret)
 			continue;
 
@@ -519,7 +523,7 @@ static bool intel_vsec_walk_dvsec(struct pci_dev *pdev,
 }
 
 static bool intel_vsec_walk_vsec(struct pci_dev *pdev,
-				 const struct intel_vsec_platform_info *info)
+				 struct intel_vsec_platform_info *info)
 {
 	bool have_devices = false;
 	int pos = 0;
@@ -553,8 +557,7 @@ static bool intel_vsec_walk_vsec(struct pci_dev *pdev,
 		header.tbir = INTEL_DVSEC_TABLE_BAR(table);
 		header.offset = INTEL_DVSEC_TABLE_OFFSET(table);
 
-		ret = intel_vsec_register_device(pdev, &header, info,
-						 pci_resource_start(pdev, header.tbir));
+		ret = intel_vsec_register_device(pdev, &header, info);
 		if (ret)
 			continue;
 
@@ -565,7 +568,7 @@ static bool intel_vsec_walk_vsec(struct pci_dev *pdev,
 }
 
 int intel_vsec_register(struct pci_dev *pdev,
-			const struct intel_vsec_platform_info *info)
+			 struct intel_vsec_platform_info *info)
 {
 	if (!pdev || !info || !info->headers)
 		return -EINVAL;
@@ -578,7 +581,7 @@ int intel_vsec_register(struct pci_dev *pdev,
 EXPORT_SYMBOL_NS_GPL(intel_vsec_register, "INTEL_VSEC");
 
 static bool intel_vsec_get_features(struct pci_dev *pdev,
-				    const struct intel_vsec_platform_info *info)
+				    struct intel_vsec_platform_info *info)
 {
 	bool found = false;
 
@@ -620,13 +623,29 @@ static void intel_vsec_skip_missing_dependencies(struct pci_dev *pdev)
 	}
 }
 
-static int intel_vsec_pci_init(struct pci_dev *pdev)
+static int intel_vsec_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
-	struct vsec_priv *priv = pci_get_drvdata(pdev);
-	const struct intel_vsec_platform_info *info = priv->info;
+	struct intel_vsec_platform_info *info;
+	struct vsec_priv *priv;
+	int num_caps, ret;
 	int run_once = 0;
 	bool found_any = false;
-	int num_caps;
+
+	ret = pcim_enable_device(pdev);
+	if (ret)
+		return ret;
+
+	pci_save_state(pdev);
+	info = (struct intel_vsec_platform_info *)id->driver_data;
+	if (!info)
+		return -EINVAL;
+
+	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	priv->info = info;
+	pci_set_drvdata(pdev, priv);
 
 	num_caps = hweight_long(info->caps);
 	while (num_caps--) {
@@ -645,31 +664,6 @@ static int intel_vsec_pci_init(struct pci_dev *pdev)
 		return -ENODEV;
 
 	return 0;
-}
-
-static int intel_vsec_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
-{
-	const struct intel_vsec_platform_info *info;
-	struct vsec_priv *priv;
-	int ret;
-
-	ret = pcim_enable_device(pdev);
-	if (ret)
-		return ret;
-
-	pci_save_state(pdev);
-	info = (const struct intel_vsec_platform_info *)id->driver_data;
-	if (!info)
-		return -EINVAL;
-
-	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
-	if (!priv)
-		return -ENOMEM;
-
-	priv->info = info;
-	pci_set_drvdata(pdev, priv);
-
-	return intel_vsec_pci_init(pdev);
 }
 
 int intel_vsec_set_mapping(struct oobmsm_plat_info *plat_info,
@@ -805,6 +799,7 @@ static pci_ers_result_t intel_vsec_pci_slot_reset(struct pci_dev *pdev)
 {
 	struct intel_vsec_device *intel_vsec_dev;
 	pci_ers_result_t status = PCI_ERS_RESULT_DISCONNECT;
+	const struct pci_device_id *pci_dev_id;
 	unsigned long index;
 
 	dev_info(&pdev->dev, "Resetting PCI slot\n");
@@ -825,8 +820,10 @@ static pci_ers_result_t intel_vsec_pci_slot_reset(struct pci_dev *pdev)
 		devm_release_action(&pdev->dev, intel_vsec_remove_aux,
 				    &intel_vsec_dev->auxdev);
 	}
+	pci_disable_device(pdev);
 	pci_restore_state(pdev);
-	intel_vsec_pci_init(pdev);
+	pci_dev_id = pci_match_id(intel_vsec_pci_ids, pdev);
+	intel_vsec_pci_probe(pdev, pci_dev_id);
 
 out:
 	return status;

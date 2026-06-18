@@ -390,10 +390,8 @@ static int apply_xbc(const char *path, const char *xbc_path)
 
 	/* Backup the bootconfig data */
 	data = calloc(size + BOOTCONFIG_ALIGN + BOOTCONFIG_FOOTER_SIZE, 1);
-	if (!data) {
-		free(buf);
+	if (!data)
 		return -ENOMEM;
-	}
 	memcpy(data, buf, size);
 
 	/* Check the data format */

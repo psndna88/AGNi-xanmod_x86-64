@@ -158,22 +158,13 @@ returned.
 When a message has been received, the location and size of the data with the
 message can be determined by calling::
 
-	int crypto_krb5_where_is_the_data(const struct krb5_enctype *krb5,
-					  enum krb5_crypto_mode mode,
-					  size_t *_offset, size_t *_len);
+	void crypto_krb5_where_is_the_data(const struct krb5_enctype *krb5,
+					   enum krb5_crypto_mode mode,
+					   size_t *_offset, size_t *_len);
 
 The caller provides the offset and length of the message to the function, which
 then alters those values to indicate the region containing the data (plus any
-padding).  It is up to the caller to determine how much padding there is.  The
-function returns an error if the length is too small or if the mode is
-unsupported.  An additional function::
-
-	int crypto_krb5_check_data_len(const struct krb5_enctype *krb5,
-				       enum krb5_crypto_mode mode,
-				       size_t len, size_t min_content);
-
-is provided to just do a basic check that the decrypted/verified message would
-have a sufficient minimum payload.
+padding).  It is up to the caller to determine how much padding there is.
 
 Preparation Functions
 ---------------------

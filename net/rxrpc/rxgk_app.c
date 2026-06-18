@@ -40,7 +40,7 @@
  * };
  */
 int rxgk_yfs_decode_ticket(struct rxrpc_connection *conn, struct sk_buff *skb,
-			   void *buffer, unsigned int ticket_len,
+			   unsigned int ticket_offset, unsigned int ticket_len,
 			   struct key **_key)
 {
 	struct rxrpc_key_token *token;
@@ -49,7 +49,7 @@ int rxgk_yfs_decode_ticket(struct rxrpc_connection *conn, struct sk_buff *skb,
 	size_t pre_ticket_len, payload_len;
 	unsigned int klen, enctype;
 	void *payload, *ticket;
-	__be32 *t, *p, *q, *tmp;
+	__be32 *t, *p, *q, tmp[2];
 	int ret;
 
 	_enter("");
@@ -59,7 +59,10 @@ int rxgk_yfs_decode_ticket(struct rxrpc_connection *conn, struct sk_buff *skb,
 					rxgk_abort_resp_short_yfs_tkt);
 
 	/* Get the session key length */
-	tmp = buffer;
+	ret = skb_copy_bits(skb, ticket_offset, tmp, sizeof(tmp));
+	if (ret < 0)
+		return rxrpc_abort_conn(conn, skb, RXGK_INCONSISTENCY, -EPROTO,
+					rxgk_abort_resp_short_yfs_klen);
 	enctype = ntohl(tmp[0]);
 	klen = ntohl(tmp[1]);
 
@@ -81,7 +84,12 @@ int rxgk_yfs_decode_ticket(struct rxrpc_connection *conn, struct sk_buff *skb,
 	 * it.
 	 */
 	ticket = payload + pre_ticket_len;
-	memcpy(ticket, buffer, ticket_len);
+	ret = skb_copy_bits(skb, ticket_offset, ticket, ticket_len);
+	if (ret < 0) {
+		ret = rxrpc_abort_conn(conn, skb, RXGK_INCONSISTENCY, -EPROTO,
+				       rxgk_abort_resp_short_yfs_tkt);
+		goto error;
+	}
 
 	/* Fill out the form header. */
 	p = payload;
@@ -123,7 +131,7 @@ int rxgk_yfs_decode_ticket(struct rxrpc_connection *conn, struct sk_buff *skb,
 		goto error;
 	}
 
-	/* Ticket appended above. */
+	/* Ticket read in with skb_copy_bits above */
 	q += xdr_round_up(ticket_len) / 4;
 	if (WARN_ON((unsigned long)q - (unsigned long)payload != payload_len)) {
 		ret = -EIO;
@@ -174,15 +182,14 @@ error:
  * [tools.ietf.org/html/draft-wilkinson-afs3-rxgk-afs-08 sec 6.1]
  */
 int rxgk_extract_token(struct rxrpc_connection *conn, struct sk_buff *skb,
-		       void *token, unsigned int token_len,
+		       unsigned int token_offset, unsigned int token_len,
 		       struct key **_key)
 {
 	const struct krb5_enctype *krb5;
 	const struct krb5_buffer *server_secret;
 	struct crypto_aead *token_enc = NULL;
 	struct key *server_key;
-	unsigned int ticket_len;
-	void *ticket;
+	unsigned int ticket_offset, ticket_len;
 	u32 kvno, enctype;
 	int ret, ec = 0;
 
@@ -190,23 +197,24 @@ int rxgk_extract_token(struct rxrpc_connection *conn, struct sk_buff *skb,
 		__be32 kvno;
 		__be32 enctype;
 		__be32 token_len;
-	} *container;
+	} container;
 
-	if (token_len < sizeof(*container))
+	if (token_len < sizeof(container))
 		goto short_packet;
 
 	/* Decode the RXGK_TokenContainer object.  This tells us which server
 	 * key we should be using.  We can then fetch the key, get the secret
 	 * and set up the crypto to extract the token.
 	 */
-	container = token;
-	token += sizeof(*container);
+	if (skb_copy_bits(skb, token_offset, &container, sizeof(container)) < 0)
+		goto short_packet;
 
-	kvno		= ntohl(container->kvno);
-	enctype		= ntohl(container->enctype);
-	ticket_len	= ntohl(container->token_len);
+	kvno		= ntohl(container.kvno);
+	enctype		= ntohl(container.enctype);
+	ticket_len	= ntohl(container.token_len);
+	ticket_offset	= token_offset + sizeof(container);
 
-	if (ticket_len > xdr_round_down(token_len - sizeof(*container)))
+	if (ticket_len > xdr_round_down(token_len - sizeof(container)))
 		goto short_packet;
 
 	_debug("KVNO %u", kvno);
@@ -229,8 +237,8 @@ int rxgk_extract_token(struct rxrpc_connection *conn, struct sk_buff *skb,
 	 * gain access to K0, from which we can derive the transport key and
 	 * thence decode the authenticator.
 	 */
-	ticket = token;
-	ret = rxgk_decrypt(krb5, token_enc, &ticket, &ticket_len, &ec);
+	ret = rxgk_decrypt_skb(krb5, token_enc, skb,
+			       &ticket_offset, &ticket_len, &ec);
 	crypto_free_aead(token_enc);
 	token_enc = NULL;
 	if (ret < 0) {
@@ -240,7 +248,7 @@ int rxgk_extract_token(struct rxrpc_connection *conn, struct sk_buff *skb,
 		return ret;
 	}
 
-	ret = conn->security->default_decode_ticket(conn, skb, ticket,
+	ret = conn->security->default_decode_ticket(conn, skb, ticket_offset,
 						    ticket_len, _key);
 	if (ret < 0)
 		goto cant_get_token;

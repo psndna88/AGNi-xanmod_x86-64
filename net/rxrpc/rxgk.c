@@ -473,20 +473,15 @@ static int rxgk_verify_packet_integrity(struct rxrpc_call *call,
 	struct rxrpc_skb_priv *sp = rxrpc_skb(skb);
 	struct rxgk_header *hdr;
 	struct krb5_buffer metadata;
-	unsigned int len = call->rx_dec_len;
+	unsigned int offset = sp->offset, len = sp->len;
 	size_t data_offset = 0, data_len = len;
-	void *data = call->rx_dec_buffer, *p = data;
 	u32 ac = 0;
 	int ret = -ENOMEM;
 
 	_enter("");
 
-	if (crypto_krb5_where_is_the_data(gk->krb5, KRB5_CHECKSUM_MODE,
-					  &data_offset, &data_len) < 0) {
-		ret = rxrpc_abort_eproto(call, skb, RXGK_PACKETSHORT,
-					 rxgk_abort_1_short_header);
-		goto put_gk;
-	}
+	crypto_krb5_where_is_the_data(gk->krb5, KRB5_CHECKSUM_MODE,
+				      &data_offset, &data_len);
 
 	hdr = kzalloc(sizeof(*hdr), GFP_NOFS);
 	if (!hdr)
@@ -501,15 +496,16 @@ static int rxgk_verify_packet_integrity(struct rxrpc_call *call,
 
 	metadata.len = sizeof(*hdr);
 	metadata.data = hdr;
-	ret = rxgk_verify_mic(gk->krb5, gk->rx_Kc, &metadata, &p, &len, &ac);
+	ret = rxgk_verify_mic_skb(gk->krb5, gk->rx_Kc, &metadata,
+				  skb, &offset, &len, &ac);
 	kfree(hdr);
 	if (ret < 0) {
 		if (ret != -ENOMEM)
 			rxrpc_abort_eproto(call, skb, ac,
 					   rxgk_abort_1_verify_mic_eproto);
 	} else {
-		call->rx_dec_offset = p - data;
-		call->rx_dec_len = len;
+		sp->offset = offset;
+		sp->len = len;
 	}
 
 put_gk:
@@ -526,53 +522,49 @@ static int rxgk_verify_packet_encrypted(struct rxrpc_call *call,
 					struct sk_buff *skb)
 {
 	struct rxrpc_skb_priv *sp = rxrpc_skb(skb);
-	struct rxgk_header *hdr;
-	unsigned int offset = 0, len = call->rx_dec_len;
-	void *data = call->rx_dec_buffer, *p = data;
+	struct rxgk_header hdr;
+	unsigned int offset = sp->offset, len = sp->len;
 	int ret;
 	u32 ac = 0;
 
 	_enter("");
 
-	if (crypto_krb5_check_data_len(gk->krb5, KRB5_ENCRYPT_MODE,
-				       len, sizeof(*hdr)) < 0) {
-		ret = rxrpc_abort_eproto(call, skb, RXGK_PACKETSHORT,
-					 rxgk_abort_2_short_header);
-		goto error;
-	}
-
-	ret = rxgk_decrypt(gk->krb5, gk->rx_enc, &p, &len, &ac);
+	ret = rxgk_decrypt_skb(gk->krb5, gk->rx_enc, skb, &offset, &len, &ac);
 	if (ret < 0) {
 		if (ret != -ENOMEM)
 			rxrpc_abort_eproto(call, skb, ac, rxgk_abort_2_decrypt_eproto);
 		goto error;
 	}
-	offset = p - data;
 
-	if (len < sizeof(*hdr)) {
+	if (len < sizeof(hdr)) {
 		ret = rxrpc_abort_eproto(call, skb, RXGK_PACKETSHORT,
 					 rxgk_abort_2_short_header);
 		goto error;
 	}
 
 	/* Extract the header from the skb */
-	hdr = data + offset;
-	offset += sizeof(*hdr);
-	len -= sizeof(*hdr);
+	ret = skb_copy_bits(skb, offset, &hdr, sizeof(hdr));
+	if (ret < 0) {
+		ret = rxrpc_abort_eproto(call, skb, RXGK_PACKETSHORT,
+					 rxgk_abort_2_short_encdata);
+		goto error;
+	}
+	offset += sizeof(hdr);
+	len -= sizeof(hdr);
 
-	if (ntohl(hdr->epoch)		!= call->conn->proto.epoch ||
-	    ntohl(hdr->cid)		!= call->cid ||
-	    ntohl(hdr->call_number)	!= call->call_id ||
-	    ntohl(hdr->seq)		!= sp->hdr.seq ||
-	    ntohl(hdr->sec_index)	!= call->security_ix ||
-	    ntohl(hdr->data_len)	> len) {
+	if (ntohl(hdr.epoch)		!= call->conn->proto.epoch ||
+	    ntohl(hdr.cid)		!= call->cid ||
+	    ntohl(hdr.call_number)	!= call->call_id ||
+	    ntohl(hdr.seq)		!= sp->hdr.seq ||
+	    ntohl(hdr.sec_index)	!= call->security_ix ||
+	    ntohl(hdr.data_len)		> len) {
 		ret = rxrpc_abort_eproto(call, skb, RXGK_SEALEDINCON,
 					 rxgk_abort_2_short_data);
 		goto error;
 	}
 
-	call->rx_dec_offset = offset;
-	call->rx_dec_len = ntohl(hdr->data_len);
+	sp->offset = offset;
+	sp->len = ntohl(hdr.data_len);
 	ret = 0;
 error:
 	rxgk_put(gk);
@@ -1084,12 +1076,11 @@ static int rxgk_sendmsg_respond_to_challenge(struct sk_buff *challenge,
  *	unsigned int call_numbers<>;
  * };
  */
-static int rxgk_verify_authenticator(struct rxrpc_connection *conn,
-				     const struct krb5_enctype *krb5,
-				     struct sk_buff *skb,
-				     void *auth, unsigned int auth_len)
+static int rxgk_do_verify_authenticator(struct rxrpc_connection *conn,
+					const struct krb5_enctype *krb5,
+					struct sk_buff *skb,
+					__be32 *p, __be32 *end)
 {
-	__be32 *p = auth, *end = auth + auth_len;
 	u32 app_len, call_count, level, epoch, cid, i;
 
 	_enter("");
@@ -1153,6 +1144,37 @@ static int rxgk_verify_authenticator(struct rxrpc_connection *conn,
 }
 
 /*
+ * Extract the authenticator and verify it.
+ */
+static int rxgk_verify_authenticator(struct rxrpc_connection *conn,
+				     const struct krb5_enctype *krb5,
+				     struct sk_buff *skb,
+				     unsigned int auth_offset, unsigned int auth_len)
+{
+	void *auth;
+	__be32 *p;
+	int ret;
+
+	auth = kmalloc(auth_len, GFP_NOFS);
+	if (!auth)
+		return -ENOMEM;
+
+	ret = skb_copy_bits(skb, auth_offset, auth, auth_len);
+	if (ret < 0) {
+		ret = rxrpc_abort_conn(conn, skb, RXGK_NOTAUTH, -EPROTO,
+				       rxgk_abort_resp_short_auth);
+		goto error;
+	}
+
+	p = auth;
+	ret = rxgk_do_verify_authenticator(conn, krb5, skb, p,
+					   p + auth_len / sizeof(*p));
+error:
+	kfree(auth);
+	return ret;
+}
+
+/*
  * Verify a response.
  *
  * struct RXGK_Response {
@@ -1162,45 +1184,49 @@ static int rxgk_verify_authenticator(struct rxrpc_connection *conn,
  * };
  */
 static int rxgk_verify_response(struct rxrpc_connection *conn,
-				struct sk_buff *skb,
-				void *buffer, unsigned int len)
+				struct sk_buff *skb)
 {
 	const struct krb5_enctype *krb5;
 	struct rxrpc_key_token *token;
 	struct rxrpc_skb_priv *sp = rxrpc_skb(skb);
-	struct rxgk_response *rhdr;
+	struct rxgk_response rhdr;
 	struct rxgk_context *gk;
 	struct key *key = NULL;
-	unsigned int resp_token_len, auth_len;
-	void *resp_token, *auth;
+	unsigned int offset = sizeof(struct rxrpc_wire_header);
+	unsigned int len = skb->len - sizeof(struct rxrpc_wire_header);
+	unsigned int token_offset, token_len;
+	unsigned int auth_offset, auth_len;
 	__be32 xauth_len;
 	int ret, ec;
 
 	_enter("{%d}", conn->debug_id);
 
 	/* Parse the RXGK_Response object */
-	if (len < sizeof(*rhdr) + sizeof(__be32))
-		goto short_packet;
-	rhdr = buffer;
-	buffer	+= sizeof(*rhdr);
-	len	-= sizeof(*rhdr);
-
-	resp_token	= buffer;
-	resp_token_len	= ntohl(rhdr->token_len);
-	if (resp_token_len > len ||
-	    xdr_round_up(resp_token_len) + sizeof(__be32) > len)
+	if (sizeof(rhdr) + sizeof(__be32) > len)
 		goto short_packet;
 
-	trace_rxrpc_rx_response(conn, sp->hdr.serial, 0, sp->hdr.cksum, resp_token_len);
+	if (skb_copy_bits(skb, offset, &rhdr, sizeof(rhdr)) < 0)
+		goto short_packet;
+	offset	+= sizeof(rhdr);
+	len	-= sizeof(rhdr);
 
-	buffer	+= xdr_round_up(resp_token_len);
-	len	-= xdr_round_up(resp_token_len);
+	token_offset	= offset;
+	token_len	= ntohl(rhdr.token_len);
+	if (token_len > len ||
+	    xdr_round_up(token_len) + sizeof(__be32) > len)
+		goto short_packet;
 
-	xauth_len = *(__be32 *)buffer;
-	buffer	+= sizeof(xauth_len);
+	trace_rxrpc_rx_response(conn, sp->hdr.serial, 0, sp->hdr.cksum, token_len);
+
+	offset	+= xdr_round_up(token_len);
+	len	-= xdr_round_up(token_len);
+
+	if (skb_copy_bits(skb, offset, &xauth_len, sizeof(xauth_len)) < 0)
+		goto short_packet;
+	offset	+= sizeof(xauth_len);
 	len	-= sizeof(xauth_len);
 
-	auth		= buffer;
+	auth_offset	= offset;
 	auth_len	= ntohl(xauth_len);
 	if (auth_len > len)
 		goto short_packet;
@@ -1215,7 +1241,7 @@ static int rxgk_verify_response(struct rxrpc_connection *conn,
 	 * to the app to deal with - which might mean a round trip to
 	 * userspace.
 	 */
-	ret = rxgk_extract_token(conn, skb, resp_token, resp_token_len, &key);
+	ret = rxgk_extract_token(conn, skb, token_offset, token_len, &key);
 	if (ret < 0)
 		goto out;
 
@@ -1229,7 +1255,7 @@ static int rxgk_verify_response(struct rxrpc_connection *conn,
 	 */
 	token = key->payload.data[0];
 	conn->security_level = token->rxgk->level;
-	conn->rxgk.start_time = __be64_to_cpu(rhdr->start_time);
+	conn->rxgk.start_time = __be64_to_cpu(rhdr.start_time);
 
 	gk = rxgk_generate_transport_key(conn, token->rxgk, sp->hdr.cksum, GFP_NOFS);
 	if (IS_ERR(gk)) {
@@ -1239,18 +1265,18 @@ static int rxgk_verify_response(struct rxrpc_connection *conn,
 
 	krb5 = gk->krb5;
 
-	trace_rxrpc_rx_response(conn, sp->hdr.serial, krb5->etype, sp->hdr.cksum,
-				resp_token_len);
+	trace_rxrpc_rx_response(conn, sp->hdr.serial, krb5->etype, sp->hdr.cksum, token_len);
 
 	/* Decrypt, parse and verify the authenticator. */
-	ret = rxgk_decrypt(krb5, gk->resp_enc, &auth, &auth_len, &ec);
+	ret = rxgk_decrypt_skb(krb5, gk->resp_enc, skb,
+			       &auth_offset, &auth_len, &ec);
 	if (ret < 0) {
 		rxrpc_abort_conn(conn, skb, RXGK_SEALEDINCON, ret,
 				 rxgk_abort_resp_auth_dec);
 		goto out_gk;
 	}
 
-	ret = rxgk_verify_authenticator(conn, krb5, skb, auth, auth_len);
+	ret = rxgk_verify_authenticator(conn, krb5, skb, auth_offset, auth_len);
 	if (ret < 0)
 		goto out_gk;
 

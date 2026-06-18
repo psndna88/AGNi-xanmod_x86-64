@@ -45,11 +45,12 @@ static void netfs_prepare_dio_read_iterator(struct netfs_io_subrequest *subreq)
  * Perform a read to a buffer from the server, slicing up the region to be read
  * according to the network rsize.
  */
-static void netfs_dispatch_unbuffered_reads(struct netfs_io_request *rreq)
+static int netfs_dispatch_unbuffered_reads(struct netfs_io_request *rreq)
 {
+	struct netfs_io_stream *stream = &rreq->io_streams[0];
 	unsigned long long start = rreq->start;
 	ssize_t size = rreq->len;
-	int ret;
+	int ret = 0;
 
 	do {
 		struct netfs_io_subrequest *subreq;
@@ -57,10 +58,7 @@ static void netfs_dispatch_unbuffered_reads(struct netfs_io_request *rreq)
 
 		subreq = netfs_alloc_subrequest(rreq);
 		if (!subreq) {
-			/* Stash the error in the request if there's not
-			 * already an error set.
-			 */
-			cmpxchg(&rreq->error, 0, -ENOMEM);
+			ret = -ENOMEM;
 			break;
 		}
 
@@ -68,13 +66,25 @@ static void netfs_dispatch_unbuffered_reads(struct netfs_io_request *rreq)
 		subreq->start	= start;
 		subreq->len	= size;
 
-		netfs_queue_read(rreq, subreq);
+		__set_bit(NETFS_SREQ_IN_PROGRESS, &subreq->flags);
+
+		spin_lock(&rreq->lock);
+		list_add_tail(&subreq->rreq_link, &stream->subrequests);
+		if (list_is_first(&subreq->rreq_link, &stream->subrequests)) {
+			if (!stream->active) {
+				stream->collected_to = subreq->start;
+				/* Store list pointers before active flag */
+				smp_store_release(&stream->active, true);
+			}
+		}
+		trace_netfs_sreq(subreq, netfs_sreq_trace_added);
+		spin_unlock(&rreq->lock);
 
 		netfs_stat(&netfs_n_rh_download);
 		if (rreq->netfs_ops->prepare_read) {
 			ret = rreq->netfs_ops->prepare_read(subreq);
 			if (ret < 0) {
-				netfs_cancel_read(subreq, ret);
+				netfs_put_subrequest(subreq, netfs_sreq_trace_put_cancel);
 				break;
 			}
 		}
@@ -103,6 +113,8 @@ static void netfs_dispatch_unbuffered_reads(struct netfs_io_request *rreq)
 		set_bit(NETFS_RREQ_ALL_QUEUED, &rreq->flags);
 		netfs_wake_collector(rreq);
 	}
+
+	return ret;
 }
 
 /*
@@ -125,17 +137,21 @@ static ssize_t netfs_unbuffered_read(struct netfs_io_request *rreq, bool sync)
 	// TODO: Use bounce buffer if requested
 
 	inode_dio_begin(rreq->inode);
-	netfs_dispatch_unbuffered_reads(rreq);
 
-	/* The collector will get run, even if we don't manage to submit any
-	 * subreqs, so we shouldn't call inode_dio_end() here.
-	 */
+	ret = netfs_dispatch_unbuffered_reads(rreq);
+
+	if (!rreq->submitted) {
+		netfs_put_request(rreq, netfs_rreq_trace_put_no_submit);
+		inode_dio_end(rreq->inode);
+		ret = 0;
+		goto out;
+	}
 
 	if (sync)
 		ret = netfs_wait_for_read(rreq);
 	else
 		ret = -EIOCBQUEUED;
-
+out:
 	_leave(" = %zd", ret);
 	return ret;
 }

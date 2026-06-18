@@ -42,7 +42,6 @@
 
 struct ebt_pernet {
 	struct list_head tables;
-	struct list_head dead_tables;
 };
 
 struct ebt_template {
@@ -1163,6 +1162,11 @@ free_newinfo:
 
 static void __ebt_unregister_table(struct net *net, struct ebt_table *table)
 {
+	mutex_lock(&ebt_mutex);
+	list_del(&table->list);
+	mutex_unlock(&ebt_mutex);
+	audit_log_nfcfg(table->name, AF_BRIDGE, table->private->nentries,
+			AUDIT_XT_OP_UNREGISTER, GFP_KERNEL);
 	EBT_ENTRY_ITERATE(table->private->entries, table->private->entries_size,
 			  ebt_cleanup_entry, net, NULL);
 	if (table->private->nentries)
@@ -1263,15 +1267,13 @@ int ebt_register_table(struct net *net, const struct ebt_table *input_table,
 	for (i = 0; i < num_ops; i++)
 		ops[i].priv = table;
 
+	list_add(&table->list, &ebt_net->tables);
+	mutex_unlock(&ebt_mutex);
+
 	table->ops = ops;
 	ret = nf_register_net_hooks(net, ops, num_ops);
-	if (ret) {
-		synchronize_rcu();
+	if (ret)
 		__ebt_unregister_table(net, table);
-	} else {
-		list_add(&table->list, &ebt_net->tables);
-	}
-	mutex_unlock(&ebt_mutex);
 
 	audit_log_nfcfg(repl->name, AF_BRIDGE, repl->nentries,
 			AUDIT_XT_OP_REGISTER, GFP_KERNEL);
@@ -1337,7 +1339,7 @@ void ebt_unregister_template(const struct ebt_table *t)
 }
 EXPORT_SYMBOL(ebt_unregister_template);
 
-void ebt_unregister_table_pre_exit(struct net *net, const char *name)
+static struct ebt_table *__ebt_find_table(struct net *net, const char *name)
 {
 	struct ebt_pernet *ebt_net = net_generic(net, ebt_pernet_id);
 	struct ebt_table *t;
@@ -1346,36 +1348,30 @@ void ebt_unregister_table_pre_exit(struct net *net, const char *name)
 
 	list_for_each_entry(t, &ebt_net->tables, list) {
 		if (strcmp(t->name, name) == 0) {
-			list_move(&t->list, &ebt_net->dead_tables);
 			mutex_unlock(&ebt_mutex);
-			nf_unregister_net_hooks(net, t->ops, hweight32(t->valid_hooks));
-			return;
+			return t;
 		}
 	}
 
 	mutex_unlock(&ebt_mutex);
+	return NULL;
+}
+
+void ebt_unregister_table_pre_exit(struct net *net, const char *name)
+{
+	struct ebt_table *table = __ebt_find_table(net, name);
+
+	if (table)
+		nf_unregister_net_hooks(net, table->ops, hweight32(table->valid_hooks));
 }
 EXPORT_SYMBOL(ebt_unregister_table_pre_exit);
 
 void ebt_unregister_table(struct net *net, const char *name)
 {
-	struct ebt_pernet *ebt_net = net_generic(net, ebt_pernet_id);
-	struct ebt_table *t;
+	struct ebt_table *table = __ebt_find_table(net, name);
 
-	mutex_lock(&ebt_mutex);
-
-	list_for_each_entry(t, &ebt_net->dead_tables, list) {
-		if (strcmp(t->name, name) == 0) {
-			list_del(&t->list);
-			audit_log_nfcfg(t->name, AF_BRIDGE, t->private->nentries,
-					AUDIT_XT_OP_UNREGISTER, GFP_KERNEL);
-			__ebt_unregister_table(net, t);
-			mutex_unlock(&ebt_mutex);
-			return;
-		}
-	}
-
-	mutex_unlock(&ebt_mutex);
+	if (table)
+		__ebt_unregister_table(net, table);
 }
 
 /* userspace just supplied us with counters */
@@ -1956,25 +1952,6 @@ enum compat_mwt {
 	EBT_COMPAT_TARGET,
 };
 
-static bool match_size_ok(const struct xt_match *match, unsigned int match_size)
-{
-	u16 csize;
-
-	if (match->matchsize == -1) /* cannot validate ebt_among */
-		return true;
-
-	csize = match->compatsize ? : match->matchsize;
-
-	return match_size >= csize;
-}
-
-static bool tgt_size_ok(const struct xt_target *tgt, unsigned int tgt_size)
-{
-	u16 csize = tgt->compatsize ? : tgt->targetsize;
-
-	return tgt_size >= csize;
-}
-
 static int compat_mtw_from_user(const struct compat_ebt_entry_mwt *mwt,
 				enum compat_mwt compat_mwt,
 				struct ebt_entries_buf_state *state,
@@ -2000,11 +1977,6 @@ static int compat_mtw_from_user(const struct compat_ebt_entry_mwt *mwt,
 		if (IS_ERR(match))
 			return PTR_ERR(match);
 
-		if (!match_size_ok(match, match_size)) {
-			module_put(match->me);
-			return -EINVAL;
-		}
-
 		off = ebt_compat_match_offset(match, match_size);
 		if (dst) {
 			if (match->compat_from_user)
@@ -2024,12 +1996,6 @@ static int compat_mtw_from_user(const struct compat_ebt_entry_mwt *mwt,
 					    mwt->u.revision);
 		if (IS_ERR(wt))
 			return PTR_ERR(wt);
-
-		if (!tgt_size_ok(wt, match_size)) {
-			module_put(wt->me);
-			return -EINVAL;
-		}
-
 		off = xt_compat_target_offset(wt);
 
 		if (dst) {
@@ -2590,21 +2556,11 @@ static int __net_init ebt_pernet_init(struct net *net)
 	struct ebt_pernet *ebt_net = net_generic(net, ebt_pernet_id);
 
 	INIT_LIST_HEAD(&ebt_net->tables);
-	INIT_LIST_HEAD(&ebt_net->dead_tables);
 	return 0;
-}
-
-static void __net_exit ebt_pernet_exit(struct net *net)
-{
-	struct ebt_pernet *ebt_net = net_generic(net, ebt_pernet_id);
-
-	WARN_ON_ONCE(!list_empty(&ebt_net->tables));
-	WARN_ON_ONCE(!list_empty(&ebt_net->dead_tables));
 }
 
 static struct pernet_operations ebt_net_ops = {
 	.init = ebt_pernet_init,
-	.exit = ebt_pernet_exit,
 	.id   = &ebt_pernet_id,
 	.size = sizeof(struct ebt_pernet),
 };
@@ -2613,20 +2569,19 @@ static int __init ebtables_init(void)
 {
 	int ret;
 
-	ret = register_pernet_subsys(&ebt_net_ops);
+	ret = xt_register_target(&ebt_standard_target);
 	if (ret < 0)
 		return ret;
-
-	ret = xt_register_target(&ebt_standard_target);
-	if (ret < 0) {
-		unregister_pernet_subsys(&ebt_net_ops);
-		return ret;
-	}
-
 	ret = nf_register_sockopt(&ebt_sockopts);
 	if (ret < 0) {
 		xt_unregister_target(&ebt_standard_target);
-		unregister_pernet_subsys(&ebt_net_ops);
+		return ret;
+	}
+
+	ret = register_pernet_subsys(&ebt_net_ops);
+	if (ret < 0) {
+		nf_unregister_sockopt(&ebt_sockopts);
+		xt_unregister_target(&ebt_standard_target);
 		return ret;
 	}
 

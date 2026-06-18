@@ -311,7 +311,6 @@ static bool cxl_mem_raw_command_allowed(u16 opcode)
  * cxl_payload_from_user_allowed() - Check contents of in_payload.
  * @opcode: The mailbox command opcode.
  * @payload_in: Pointer to the input payload passed in from user space.
- * @in_size: Size of @payload_in in bytes.
  *
  * Return:
  *  * true	- payload_in passes check for @opcode.
@@ -326,15 +325,12 @@ static bool cxl_mem_raw_command_allowed(u16 opcode)
  *
  * The specific checks are determined by the opcode.
  */
-static bool cxl_payload_from_user_allowed(u16 opcode, void *payload_in,
-					  size_t in_size)
+static bool cxl_payload_from_user_allowed(u16 opcode, void *payload_in)
 {
 	switch (opcode) {
 	case CXL_MBOX_OP_SET_PARTITION_INFO: {
 		struct cxl_mbox_set_partition_info *pi = payload_in;
 
-		if (in_size < sizeof(*pi))
-			return false;
 		if (pi->flags & CXL_SET_PARTITION_IMMEDIATE_FLAG)
 			return false;
 		break;
@@ -342,8 +338,6 @@ static bool cxl_payload_from_user_allowed(u16 opcode, void *payload_in,
 	case CXL_MBOX_OP_CLEAR_LOG: {
 		const uuid_t *uuid = (uuid_t *)payload_in;
 
-		if (in_size < sizeof(uuid_t))
-			return false;
 		/*
 		 * Restrict the ‘Clear log’ action to only apply to
 		 * Vendor debug logs.
@@ -371,8 +365,7 @@ static int cxl_mbox_cmd_ctor(struct cxl_mbox_cmd *mbox_cmd,
 		if (IS_ERR(mbox_cmd->payload_in))
 			return PTR_ERR(mbox_cmd->payload_in);
 
-		if (!cxl_payload_from_user_allowed(opcode, mbox_cmd->payload_in,
-						  in_size)) {
+		if (!cxl_payload_from_user_allowed(opcode, mbox_cmd->payload_in)) {
 			dev_dbg(cxl_mbox->host, "%s: input payload not allowed\n",
 				cxl_mem_opcode_to_name(opcode));
 			kvfree(mbox_cmd->payload_in);

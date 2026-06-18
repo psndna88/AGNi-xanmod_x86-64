@@ -638,17 +638,10 @@ fail:
 	return ret;
 }
 
-static void rockchip_clk_put(void *data)
-{
-	struct clk *clk = data;
-
-	clk_put(clk);
-}
-
 static int rockchip_get_bank_data(struct rockchip_pin_bank *bank)
 {
 	struct resource res;
-	int id = 0, ret;
+	int id = 0;
 
 	if (of_address_to_resource(bank->of_node, 0, &res)) {
 		dev_err(bank->dev, "cannot find IO resource for bank\n");
@@ -663,10 +656,11 @@ static int rockchip_get_bank_data(struct rockchip_pin_bank *bank)
 	if (!bank->irq)
 		return -EINVAL;
 
-	bank->clk = devm_clk_get_enabled(bank->dev, NULL);
+	bank->clk = of_clk_get(bank->of_node, 0);
 	if (IS_ERR(bank->clk))
 		return PTR_ERR(bank->clk);
 
+	clk_prepare_enable(bank->clk);
 	id = readl(bank->reg_base + gpio_regs_v2.version_id);
 
 	switch (id) {
@@ -678,13 +672,9 @@ static int rockchip_get_bank_data(struct rockchip_pin_bank *bank)
 		bank->db_clk = of_clk_get(bank->of_node, 1);
 		if (IS_ERR(bank->db_clk)) {
 			dev_err(bank->dev, "cannot find debounce clk\n");
+			clk_disable_unprepare(bank->clk);
 			return -EINVAL;
 		}
-
-		ret = devm_add_action_or_reset(bank->dev, rockchip_clk_put,
-					       bank->db_clk);
-		if (ret)
-			return ret;
 		break;
 	case GPIO_TYPE_V1:
 		bank->gpio_regs = &gpio_regs_v1;
@@ -761,6 +751,7 @@ static int rockchip_gpio_probe(struct platform_device *pdev)
 
 	ret = rockchip_gpiolib_register(bank);
 	if (ret) {
+		clk_disable_unprepare(bank->clk);
 		mutex_unlock(&bank->deferred_lock);
 		return ret;
 	}
@@ -801,9 +792,7 @@ static void rockchip_gpio_remove(struct platform_device *pdev)
 {
 	struct rockchip_pin_bank *bank = platform_get_drvdata(pdev);
 
-	irq_set_chained_handler_and_data(bank->irq, NULL, NULL);
-	if (bank->domain)
-		irq_domain_remove(bank->domain);
+	clk_disable_unprepare(bank->clk);
 	gpiochip_remove(&bank->gpio_chip);
 }
 

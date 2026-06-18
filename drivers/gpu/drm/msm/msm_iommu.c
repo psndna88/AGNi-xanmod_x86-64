@@ -677,7 +677,7 @@ static int msm_iommu_map(struct msm_mmu *mmu, uint64_t iova,
 			 int prot)
 {
 	struct msm_iommu *iommu = to_msm_iommu(mmu);
-	ssize_t ret;
+	size_t ret;
 
 	WARN_ON(off != 0);
 
@@ -686,8 +686,7 @@ static int msm_iommu_map(struct msm_mmu *mmu, uint64_t iova,
 		iova |= GENMASK_ULL(63, 49);
 
 	ret = iommu_map_sgtable(iommu->domain, iova, sgt, prot);
-	if (ret < 0)
-		return ret;
+	WARN_ON(!ret);
 
 	return (ret == len) ? 0 : -EINVAL;
 }
