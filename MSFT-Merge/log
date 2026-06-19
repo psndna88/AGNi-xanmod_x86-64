@@ -9,4 +9,4 @@ feature/swiotlb-pool/6.18                          372aaab4b6fd2031a90cc04d74172
 product/wsl/readme/6.18                            bbf044c25e1203bed3182cedae466235420e7e96
 product/wsl/security/6.18                          20778f3fd73f259549f66a8bea0227dbdfe3e170
 fix/virtiofs-dax-hang/6.18                         668def1339349ba0ff85f22b6244066a8369b022
-fix/hv_sock_eio/6.18                               e256ef5ed9ce517323be79ad3268ec698533dca3
+fix/virtiofs-clamp-max-pages-dma/6.18              3586f43a9a33f5f12306de85b51f696194778156
