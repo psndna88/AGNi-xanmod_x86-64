@@ -186,3 +186,8 @@ sphinx_*/
 
 # Rust analyzer configuration
 /rust-project.json
+
+modules/
+*.vhdx
+*.old
+
