@@ -89,6 +89,10 @@ KBUILD_RUSTFLAGS += -Ctarget-feature=-sse,-sse2,-sse3,-ssse3,-sse4.1,-sse4.2,-av
 # built-in target when checking whether flags are supported instead.
 KBUILD_RUSTFLAGS_OPTION_CHKS += --target=x86_64-unknown-none
 
+# The target.json file is not available when invoking rustc-option, so use the
+# built-in target when checking whether flags are supported instead.
+KBUILD_RUSTFLAGS_OPTION_CHKS += --target=x86_64-unknown-none
+
 #
 # CFLAGS for compiling floating point code inside the kernel.
 #
