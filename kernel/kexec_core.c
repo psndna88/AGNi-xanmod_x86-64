@@ -1681,6 +1681,8 @@ int multikernel_kexec_by_id(int mk_id)
 	phys_addr_t spawn_ctx_phys;
 	void *trampoline_va = NULL;
 	unsigned long trampoline_phys;
+	void *park_va = NULL;
+	unsigned long park_phys = 0;
 	int cpu = -1;
 	int rc;
 
@@ -1746,6 +1748,19 @@ int multikernel_kexec_by_id(int mk_id)
 		}
 	}
 
+	if (instance->park_va) {
+		park_va = instance->park_va;
+		park_phys = virt_to_phys(park_va);
+	} else {
+		park_va = mk_setup_park_page(instance, ident_pgt, &park_phys);
+		if (IS_ERR(park_va)) {
+			pr_err("Failed to set up pool park page: %ld\n", PTR_ERR(park_va));
+			rc = PTR_ERR(park_va);
+			park_va = NULL;
+			goto unlock;
+		}
+	}
+
 	if (instance->spawn_ctx) {
 		spawn_ctx = instance->spawn_ctx;
 		spawn_ctx_phys = instance->spawn_ctx_phys;
@@ -1780,7 +1795,8 @@ int multikernel_kexec_by_id(int mk_id)
 			     mk_get_identity_cr3(ident_pgt),
 			     mk_image->mk_kernel_entry,
 			     (unsigned long)trampoline_va,
-			     trampoline_phys);
+			     trampoline_phys,
+			     park_phys);
 
 	rc = mk_spawn_cpu(cpu, spawn_ctx);
 	if (rc == 0) {
@@ -1791,6 +1807,7 @@ int multikernel_kexec_by_id(int mk_id)
 		instance->spawn_ctx_phys = spawn_ctx_phys;
 		instance->ident_pgt = ident_pgt;
 		instance->trampoline_va = trampoline_va;
+		instance->park_va = park_va;
 	}
 
 unlock:
@@ -1799,6 +1816,8 @@ unlock:
 			mk_free_identity_pgtable(ident_pgt);
 		if (trampoline_va && !instance->trampoline_va)
 			mk_instance_free(instance, trampoline_va, PAGE_SIZE);
+		if (park_va && !instance->park_va)
+			mk_instance_free(instance, park_va, PAGE_SIZE);
 	}
 	kexec_unlock();
 	return rc;
