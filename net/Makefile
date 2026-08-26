@@ -76,3 +76,4 @@ obj-$(CONFIG_MPTCP)		+= mptcp/
 obj-$(CONFIG_MCTP)		+= mctp/
 obj-$(CONFIG_NET_HANDSHAKE)	+= handshake/
 obj-$(CONFIG_NET_SHAPER)	+= shaper/
+obj-$(CONFIG_MULTIKERNEL_TCP_SPLICE)  += multikernel_tcp_splice/

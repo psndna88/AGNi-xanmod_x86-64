@@ -1,0 +1,7 @@
+config MULTIKERNEL_TCP_SPLICE
+	bool "Multikernel tcp_splice accelerates co-located TCP"
+	depends on MULTIKERNEL
+	default y
+	help
+	  Linux kernel module that accelerates co-located TCP (loopback and same-host container sidecars) by splicing two locally-connected TCP sockets
+	  through a small in-kernel ring, bypassing the skb/softirq/TCP-receive path for bulk data while leaving the real TCP connection intact.

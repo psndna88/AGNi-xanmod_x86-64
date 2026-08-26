@@ -420,6 +420,7 @@ source "net/rxrpc/Kconfig"
 source "net/kcm/Kconfig"
 source "net/strparser/Kconfig"
 source "net/mctp/Kconfig"
+source "net/multikernel_tcp_splice/Kconfig"
 
 config FIB_RULES
 	bool
