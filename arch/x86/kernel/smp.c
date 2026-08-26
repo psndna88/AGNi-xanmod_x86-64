@@ -384,7 +384,7 @@ static int mk_stop_nmi_callback(unsigned int val, struct pt_regs *regs)
 	pr_emerg("CPU %d: Forcible shutdown via NMI (instance %d)\n",
 		 smp_processor_id(), root_instance ? root_instance->id : -1);
 
-	cpu_emergency_disable_virtualization();
+	x86_virt_emergency_disable_virtualization_cpu();
 	mk_enter_pool_state(NULL);
 	return NMI_HANDLED; /* unreachable */
 }
@@ -400,7 +400,7 @@ void noinstr mk_nmi_offline_park(void)
 {
 	instrumentation_begin();
 	if (mk_cpu_parkable() && mk_has_pending_shutdown()) {
-		cpu_emergency_disable_virtualization();
+		x86_virt_emergency_disable_virtualization_cpu();
 		mk_enter_pool_state(NULL);
 	}
 	instrumentation_end();

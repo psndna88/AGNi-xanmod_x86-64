@@ -676,8 +676,7 @@ static int mk_do_device_add(u16 domain, u8 bus, u8 devfn,
 			device_release_driver(&pdev->dev);
 		}
 
-		ret = driver_set_override(&pdev->dev, &pdev->driver_override,
-					  driver_override, strlen(driver_override));
+		ret = device_set_driver_override(&pdev->dev, driver_override);
 		if (ret < 0) {
 			pr_err("Multikernel hotplug: Failed to set driver override to %s: %d\n",
 			       driver_override, ret);
@@ -706,9 +705,8 @@ static int mk_do_device_add(u16 domain, u8 bus, u8 devfn,
 		pr_info("Multikernel hotplug: Device already bound to %s\n", prev_driver);
 	} else {
 		/* An override left by an earlier move stops the default driver matching */
-		if (pdev->driver_override) {
-			ret = driver_set_override(&pdev->dev, &pdev->driver_override,
-						  "", 0);
+            if (device_has_driver_override(&pdev->dev)) {
+	            ret = device_set_driver_override(&pdev->dev, NULL);
 			if (ret < 0) {
 				pr_err("Multikernel hotplug: Failed to clear driver override: %d\n",
 				       ret);
