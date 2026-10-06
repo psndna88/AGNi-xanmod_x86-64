@@ -297,6 +297,37 @@ static void swiotlb_init_io_tlb_pool(struct io_tlb_pool *mem, phys_addr_t start,
 	return;
 }
 
+static void swiotlb_init_io_tlb_pool_old(struct io_tlb_pool *mem, phys_addr_t start,
+		unsigned long nslabs, bool late_alloc, unsigned int nareas)
+{
+	void *vaddr = phys_to_virt(start);
+	unsigned long bytes = nslabs << IO_TLB_SHIFT, i;
+
+	mem->nslabs = nslabs;
+	mem->start = start;
+	mem->end = mem->start + bytes;
+	mem->late_alloc = late_alloc;
+	mem->nareas = nareas;
+	mem->area_nslabs = nslabs / mem->nareas;
+
+	for (i = 0; i < mem->nareas; i++) {
+		spin_lock_init(&mem->areas[i].lock);
+		mem->areas[i].index = 0;
+		mem->areas[i].used = 0;
+	}
+
+	for (i = 0; i < mem->nslabs; i++) {
+		mem->slots[i].list = min(IO_TLB_SEGSIZE - io_tlb_offset(i),
+					 mem->nslabs - i);
+		mem->slots[i].orig_addr = INVALID_PHYS_ADDR;
+		mem->slots[i].alloc_size = 0;
+		mem->slots[i].pad_slots = 0;
+	}
+
+	memset(vaddr, 0, bytes);
+	mem->vaddr = vaddr;
+	return;
+}
 /**
  * add_mem_pool() - add a memory pool to the allocator
  * @mem:	Software IO TLB allocator.
@@ -1955,7 +1986,7 @@ struct io_tlb_mem *swiotlb_create_pool(phys_addr_t base, size_t size,
 
 	set_memory_decrypted((unsigned long)phys_to_virt(base),
 			     size >> PAGE_SHIFT);
-	swiotlb_init_io_tlb_pool(pool, base, nslabs, false, nareas);
+	swiotlb_init_io_tlb_pool_old(pool, base, nslabs, false, nareas);
 	mem->force_bounce = true;
 	mem->for_alloc = false;
 #ifdef CONFIG_SWIOTLB_DYNAMIC
